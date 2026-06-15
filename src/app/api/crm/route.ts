@@ -1,0 +1,119 @@
+import { NextResponse } from "next/server";
+import {
+  addClient,
+  addFictionalMechanic,
+  addVehicle,
+  assignMechanicToOrder,
+  completeOrder,
+  createOrder,
+  getAllMechanicAssignees,
+  getCrmData,
+  getMechanicProductivity,
+  setFictionalMechanicActive,
+  updateOrderStatus,
+} from "@/lib/db/crm";
+import { getRequestUser, userHasPermission } from "@/lib/db/request-auth";
+import type { MechanicKind, ServiceOrderStatus } from "@/types/client";
+
+function workshopIdFromUser(user: { workshopId: string | null }) {
+  if (!user.workshopId) throw new Error("NO_WORKSHOP");
+  return user.workshopId;
+}
+
+export async function GET() {
+  const user = await getRequestUser();
+  if (!user?.workshopId) {
+    return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+  }
+
+  const data = await getCrmData(user.workshopId);
+  const productivity = await getMechanicProductivity(user.workshopId);
+  const assignees = await getAllMechanicAssignees(user.workshopId);
+  return NextResponse.json({ ...data, productivity, assignees });
+}
+
+export async function POST(request: Request) {
+  const user = await getRequestUser();
+  if (!user?.workshopId) {
+    return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+  }
+
+  const body = (await request.json()) as Record<string, unknown>;
+  const action = body.action as string;
+
+  try {
+    const workshopId = workshopIdFromUser(user);
+
+    switch (action) {
+      case "add-client": {
+        if (!userHasPermission(user, "gerencia.cadastro_clientes") && !userHasPermission(user, "owner.cadastro_clientes")) {
+          return NextResponse.json({ error: "Sem permissão." }, { status: 403 });
+        }
+        const result = await addClient(workshopId, {
+          name: body.name as string,
+          phone: body.phone as string,
+          cpf: body.cpf as string,
+        });
+        return NextResponse.json(result);
+      }
+      case "add-vehicle": {
+        const result = await addVehicle(workshopId, {
+          clientId: body.clientId as string,
+          plate: body.plate as string,
+          model: body.model as string,
+        });
+        return NextResponse.json(result);
+      }
+      case "create-order": {
+        const result = await createOrder(workshopId, {
+          clientId: body.clientId as string,
+          service: body.service as string,
+          value: body.value as number,
+          mechanicId: body.mechanicId as string,
+          mechanicKind: body.mechanicKind as MechanicKind,
+          vehicleId: body.vehicleId as string | undefined,
+          status: body.status as ServiceOrderStatus | undefined,
+        });
+        return NextResponse.json(result);
+      }
+      case "complete-order":
+      case "update-order-status": {
+        const status = (body.status as ServiceOrderStatus) ?? "concluido";
+        const result =
+          action === "complete-order"
+            ? await completeOrder(workshopId, body.orderId as string)
+            : await updateOrderStatus(workshopId, body.orderId as string, status);
+        return NextResponse.json(result);
+      }
+      case "assign-mechanic": {
+        const result = await assignMechanicToOrder(
+          workshopId,
+          body.orderId as string,
+          body.mechanicId as string,
+          body.mechanicKind as MechanicKind
+        );
+        return NextResponse.json(result);
+      }
+      case "add-fictional": {
+        const result = await addFictionalMechanic(workshopId, {
+          name: body.name as string,
+          specialty: body.specialty as string | undefined,
+          notes: body.notes as string | undefined,
+        });
+        return NextResponse.json(result);
+      }
+      case "set-fictional-active": {
+        const result = await setFictionalMechanicActive(
+          workshopId,
+          body.mechanicId as string,
+          body.active as boolean
+        );
+        return NextResponse.json(result);
+      }
+      default:
+        return NextResponse.json({ error: "Ação inválida." }, { status: 400 });
+    }
+  } catch {
+    return NextResponse.json({ error: "Oficina não vinculada ao usuário." }, { status: 400 });
+  }
+}

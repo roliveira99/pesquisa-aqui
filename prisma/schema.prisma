@@ -1,0 +1,259 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  master
+  dono
+  gerencia
+  mecanico
+}
+
+enum WorkshopType {
+  carros
+  motos
+  mista
+  estetica
+}
+
+enum AgendaStatus {
+  pendente
+  aprovado
+  recusado
+}
+
+enum SponsorshipTier {
+  none
+  bronze
+  prata
+  ouro
+  diamante
+}
+
+enum AnnouncementPlacement {
+  home_topo
+  home_meio
+  oficinas_topo
+  site_geral
+}
+
+enum AnnouncementStyle {
+  info
+  promo
+  alerta
+}
+
+enum ServiceOrderStatus {
+  pendente
+  em_andamento
+  concluido
+  cancelado
+}
+
+enum MechanicKind {
+  fictional
+  platform
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  role         UserRole
+  workshopId   String?
+  workshop     Workshop? @relation(fields: [workshopId], references: [id], onDelete: SetNull)
+  sessions     Session[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([userId])
+}
+
+model Workshop {
+  id              String           @id
+  name            String
+  slug            String           @unique
+  type            WorkshopType
+  description     String
+  tagline         String?
+  address         String
+  city            String
+  state           String
+  phone           String
+  whatsapp        String
+  email           String
+  rating          Float            @default(0)
+  reviewCount     Int              @default(0)
+  services        Json
+  openingHours    String
+  image           String
+  coverImage      String?
+  gallery         Json?
+  specialties     Json
+  hasAgenda       Boolean          @default(true)
+  paymentMethods  Json
+  catalog         Json
+  mechanicRanking Json?
+  users           User[]
+  reviews         Review[]
+  agendaRequests  AgendaRequest[]
+  sponsorship     Sponsorship?
+  crmClients      CrmClient[]
+  crmVehicles     CrmVehicle[]
+  serviceOrders   CrmServiceOrder[]
+  fictionalMechanics FictionalMechanic[]
+  suppliers       SupplierContact[]
+  catalogOverride Json?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model Review {
+  id           String   @id
+  workshopId   String
+  workshop     Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  cpf          String
+  clientName   String
+  stars        Int
+  comment      String
+  serviceLabel String
+  removed      Boolean  @default(false)
+  createdAt    DateTime
+  updatedAt    DateTime
+
+  @@unique([workshopId, cpf])
+  @@index([workshopId])
+}
+
+model CrmClient {
+  id                String            @id
+  workshopId        String
+  workshop          Workshop          @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  cpf               String
+  name              String
+  phone             String            @default("")
+  completedServices Json
+  vehicles          CrmVehicle[]
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@unique([workshopId, cpf])
+  @@index([workshopId])
+}
+
+model CrmVehicle {
+  id         String    @id
+  workshopId String
+  workshop   Workshop  @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  clientId   String
+  client     CrmClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  plate      String
+  model      String
+
+  @@unique([workshopId, plate])
+  @@index([workshopId])
+  @@index([clientId])
+}
+
+model CrmServiceOrder {
+  id           String             @id
+  workshopId   String
+  workshop     Workshop           @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  clientId     String
+  clientName   String
+  clientCpf    String
+  vehicle      String
+  vehiclePlate String?
+  service      String
+  status       ServiceOrderStatus @default(pendente)
+  date         String
+  value        Float
+  mechanicId   String?
+  mechanicKind MechanicKind?
+  mechanicName String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@index([workshopId])
+  @@index([workshopId, status])
+}
+
+model FictionalMechanic {
+  id         String   @id
+  workshopId String
+  workshop   Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  name       String
+  specialty  String?
+  notes      String?
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  @@index([workshopId])
+}
+
+model SupplierContact {
+  id         String   @id
+  workshopId String
+  workshop   Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  name       String
+  phone      String
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  @@index([workshopId])
+}
+
+model AgendaRequest {
+  id            String       @id
+  workshopId    String
+  workshop      Workshop     @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  clientName    String
+  clientPhone   String
+  vehicle       String?
+  preferredDate String
+  preferredTime String
+  service       String
+  status        AgendaStatus @default(pendente)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([workshopId, status])
+}
+
+model Sponsorship {
+  id           String          @id @default(cuid())
+  workshopId   String          @unique
+  workshop     Workshop        @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  tier         SponsorshipTier
+  monthlyValue Float?
+  notes        String?
+  updatedAt    DateTime        @updatedAt
+}
+
+model SiteAnnouncement {
+  id        String                @id
+  title     String
+  message   String
+  linkUrl   String?
+  linkLabel String?
+  placement AnnouncementPlacement
+  style     AnnouncementStyle
+  active    Boolean               @default(true)
+  createdAt DateTime
+}

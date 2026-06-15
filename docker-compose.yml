@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: mpoficinas
+      POSTGRES_PASSWORD: mpoficinas
+      POSTGRES_DB: mpoficinas
+    volumes:
+      - mp_oficinas_pg:/var/lib/postgresql/data
+
+volumes:
+  mp_oficinas_pg:
