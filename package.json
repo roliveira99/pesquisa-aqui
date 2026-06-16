@@ -14,6 +14,7 @@
     "db:check": "node scripts/check-db.mjs",
     "db:push": "node scripts/check-db.mjs && prisma db push",
     "db:seed": "node scripts/check-db.mjs && tsx prisma/seed.ts",
+    "db:reset-production": "node scripts/check-db.mjs && tsx prisma/seed-production.ts",
     "db:setup": "node scripts/check-db.mjs && prisma db push && tsx prisma/seed.ts",
     "db:docker": "docker compose up -d"
   },

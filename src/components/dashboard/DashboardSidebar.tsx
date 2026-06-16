@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { RoleBadge } from "@/components/dashboard/RoleBadge";
-import { DemoProfileSwitcher } from "@/components/dashboard/DemoProfileSwitcher";
 import { Logo } from "@/components/ui/Logo";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
@@ -98,8 +97,6 @@ export function DashboardSidebar({
           </div>
         ))}
       </nav>
-
-      <DemoProfileSwitcher onNavigate={onNavigate} />
 
       <div className="border-t border-sidebar-border px-3 py-3">
         <div className="flex items-center justify-between px-2 py-1">

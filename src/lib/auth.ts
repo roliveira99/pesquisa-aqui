@@ -20,39 +20,6 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
       workshopName: null,
     },
   },
-  {
-    email: "dono@mpoficinas.com",
-    password: "dono123",
-    user: {
-      email: "dono@mpoficinas.com",
-      name: "João Silva",
-      role: "dono",
-      workshopId: "1",
-      workshopName: "Auto Center Silva",
-    },
-  },
-  {
-    email: "gerencia@mpoficinas.com",
-    password: "gerencia123",
-    user: {
-      email: "gerencia@mpoficinas.com",
-      name: "Maria Santos",
-      role: "gerencia",
-      workshopId: "1",
-      workshopName: "Auto Center Silva",
-    },
-  },
-  {
-    email: "mecanico@mpoficinas.com",
-    password: "mecanico123",
-    user: {
-      email: "mecanico@mpoficinas.com",
-      name: "Pedro Oliveira",
-      role: "mecanico",
-      workshopId: "1",
-      workshopName: "Auto Center Silva",
-    },
-  },
 ];
 
 const VALID_ROLES: UserRole[] = ["master", "dono", "gerencia", "mecanico"];
@@ -103,11 +70,6 @@ export function logout(): void {
   }
 }
 
-export function getDemoAccountsByRole(): Record<UserRole, DemoAccount> {
-  return {
-    master: DEMO_ACCOUNTS[0],
-    dono: DEMO_ACCOUNTS[1],
-    gerencia: DEMO_ACCOUNTS[2],
-    mecanico: DEMO_ACCOUNTS[3],
-  };
+export function getDemoAccountsByRole(): Partial<Record<UserRole, DemoAccount>> {
+  return { master: DEMO_ACCOUNTS[0] };
 }

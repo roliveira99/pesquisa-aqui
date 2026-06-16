@@ -4,12 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { RoleBadge } from "@/components/dashboard/RoleBadge";
 import { Logo } from "@/components/ui/Logo";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
-import { DEMO_ACCOUNTS, apiLogin } from "@/lib/auth-client";
-import { roleLabels } from "@/lib/permissions";
+import { apiLogin } from "@/lib/auth-client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -28,17 +26,6 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     const result = await apiLogin(email, password);
-    if ("error" in result) {
-      setError(result.error);
-      return;
-    }
-    setUser(result.user);
-    router.push("/dashboard");
-  }
-
-  async function loginAsDemo(demoEmail: string, demoPassword: string) {
-    setError("");
-    const result = await apiLogin(demoEmail, demoPassword);
     if ("error" in result) {
       setError(result.error);
       return;
@@ -88,7 +75,7 @@ export default function LoginPage() {
 
             <h2 className="text-2xl font-semibold tracking-tight">Entrar</h2>
             <p className="mt-1 text-sm text-muted">
-              Use suas credenciais ou selecione um perfil de demonstração.
+              Use as credenciais fornecidas pelo administrador da plataforma.
             </p>
 
             <form onSubmit={handleSubmit} className="mt-8 space-y-4">
@@ -132,30 +119,6 @@ export default function LoginPage() {
                 Entrar no painel
               </Button>
             </form>
-
-            <div className="mt-8">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">
-                Demonstração — acesso direto
-              </p>
-              <div className="space-y-2">
-                {DEMO_ACCOUNTS.map((account) => (
-                  <button
-                    key={account.email}
-                    type="button"
-                    onClick={() => loginAsDemo(account.email, account.password)}
-                    className="card card-hover flex w-full items-center justify-between p-3.5 text-left"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-foreground">
-                        {roleLabels[account.user.role]}
-                      </p>
-                      <p className="text-xs text-muted">{account.email}</p>
-                    </div>
-                    <RoleBadge role={account.user.role} />
-                  </button>
-                ))}
-              </div>
-            </div>
 
             <p className="mt-8 text-center text-sm text-muted">
               <Link href="/" className="font-medium text-accent hover:text-accent-hover">
