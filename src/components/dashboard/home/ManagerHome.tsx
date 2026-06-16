@@ -46,7 +46,7 @@ export function ManagerHome() {
       <div className="mb-8 grid gap-4 sm:grid-cols-3">
         {quickLinks.map((item) => (
           <Link key={item.href} href={item.href} className="card card-hover p-5">
-            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-accent-soft text-accent">
+            <div className="dash-icon-box mb-3">
               <Icon name={item.icon} className="h-5 w-5" />
             </div>
             <h3 className="font-semibold text-foreground">{item.label}</h3>

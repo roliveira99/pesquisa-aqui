@@ -131,14 +131,8 @@ export default function AdminOficinasPage() {
         }
       />
 
-      {message && (
-        <p className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">
-          {message}
-        </p>
-      )}
-      {error && (
-        <p className="mb-4 rounded-lg bg-danger-soft px-4 py-3 text-sm text-danger">{error}</p>
-      )}
+      {message && <p className="dash-alert">{message}</p>}
+      {error && <p className="dash-alert dash-alert-error">{error}</p>}
 
       {showForm && (
         <form onSubmit={handleSubmit} className="card mb-8 space-y-5 p-5">
@@ -174,7 +168,7 @@ export default function AdminOficinasPage() {
             </div>
           )}
 
-          <button type="submit" className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground">
+          <button type="submit" className="btn btn-primary">
             Cadastrar oficina
           </button>
         </form>
@@ -187,9 +181,9 @@ export default function AdminOficinasPage() {
           headers={["Oficina", "Tipo", "Cidade", "Perfil público", "Ações"]}
           rows={workshops.map((w) => [
             w.name,
-            <WorkshopTypeBadge key={`t-${w.id}`} type={w.type} />,
+            <WorkshopTypeBadge key={`t-${w.id}`} type={w.type} variant="system" />,
             `${w.city}/${w.state}`,
-            <Link key={`l-${w.id}`} href={`/oficinas/${w.slug}`} className="text-accent underline" target="_blank">
+            <Link key={`l-${w.id}`} href={`/oficinas/${w.slug}`} className="dash-link" target="_blank">
               /oficinas/{w.slug}
             </Link>,
             <ActionButton key={`d-${w.id}`} label="Remover" variant="danger" onClick={() => void handleDelete(w.id, w.name)} />,

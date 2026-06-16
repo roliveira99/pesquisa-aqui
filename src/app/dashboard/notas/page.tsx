@@ -102,7 +102,7 @@ export default function NotasClientePage() {
         <p className="card p-6 text-sm text-muted">
           Nenhum emitente (CNPJ) cadastrado.{" "}
           {isOwner ? (
-            <Link href="/dashboard/notas/emitentes" className="font-medium text-accent underline">
+            <Link href="/dashboard/notas/emitentes" className="dash-link font-medium">
               Cadastre nomes e CNPJs
             </Link>
           ) : (
@@ -113,7 +113,7 @@ export default function NotasClientePage() {
         <>
           <p className="mb-4 text-sm text-muted">
             Orçamentos internos continuam em{" "}
-            <Link href="/dashboard/orcamentos" className="text-accent underline">
+            <Link href="/dashboard/orcamentos" className="dash-link">
               Orçamentos
             </Link>
             . Aqui você gera a <strong>nota para o cliente</strong> com layout padrão.
@@ -161,7 +161,7 @@ export default function NotasClientePage() {
                 </div>
 
                 {!client?.phone && (
-                  <p className="text-sm text-amber-700 dark:text-amber-400">
+                  <p className="text-sm text-muted">
                     Cliente sem telefone no cadastro — WhatsApp usará o número do emitente. Atualize em Cadastros.
                   </p>
                 )}
@@ -170,7 +170,7 @@ export default function NotasClientePage() {
                   <button
                     type="button"
                     onClick={() => setPreview(true)}
-                    className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground"
+                    className="btn btn-primary"
                   >
                     Visualizar nota
                   </button>
@@ -198,7 +198,7 @@ export default function NotasClientePage() {
                   <button
                     type="button"
                     onClick={() => setPreview(false)}
-                    className="mt-4 text-sm text-accent underline"
+                    className="dash-link mt-4 text-sm"
                   >
                     Voltar e editar
                   </button>

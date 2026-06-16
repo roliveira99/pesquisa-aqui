@@ -15,9 +15,9 @@ const statusLabels: Record<AgendaRequest["status"], string> = {
 };
 
 const statusColors: Record<AgendaRequest["status"], string> = {
-  pendente: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300",
-  aprovado: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300",
-  recusado: "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300",
+  pendente: "dash-badge",
+  aprovado: "dash-badge font-medium text-foreground",
+  recusado: "dash-badge opacity-60",
 };
 
 function formatDateKey(iso: string) {
@@ -92,11 +92,7 @@ export default function AgendaPage() {
         description="Solicitações do site público e horários confirmados — aprove e avise o cliente no WhatsApp"
       />
 
-      {feedback && (
-        <p className="mb-4 rounded-lg border border-border bg-surface-hover px-4 py-3 text-sm text-muted-foreground">
-          {feedback}
-        </p>
-      )}
+      {feedback && <p className="dash-alert">{feedback}</p>}
 
       {pending.length > 0 && (
         <section className="card mb-6 p-5">
@@ -152,13 +148,13 @@ export default function AgendaPage() {
                 onClick={() => setSelectedDate(dateKey)}
                 className={`rounded-lg border px-2 py-3 text-center text-xs transition-colors ${
                   isSelected
-                    ? "border-accent bg-accent/10 font-semibold text-accent"
+                    ? "border-border-strong bg-surface font-semibold text-foreground shadow-[inset_0_0_0_1px_var(--dash-border-strong)]"
                     : "border-border hover:bg-surface-hover"
                 }`}
               >
                 <span className="block capitalize">{label}</span>
                 {hasEvents && (
-                  <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />
+                  <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-border-strong" aria-hidden />
                 )}
               </button>
             );

@@ -18,16 +18,12 @@ export default function AdminPlanosPage() {
         {plans.map((plan) => (
           <div
             key={plan.id}
-            className={`rounded-xl border p-6 ${
-              plan.id === "profissional"
-                ? "border-accent bg-accent/5"
-                : "border-border bg-surface"
+            className={`card p-6 ${
+              plan.id === "profissional" ? "ring-1 ring-border-strong" : ""
             }`}
           >
             {plan.id === "profissional" && (
-              <span className="mb-2 inline-block rounded-full bg-accent/15 px-2 py-0.5 text-xs font-medium text-accent">
-                Mais popular
-              </span>
+              <span className="dash-badge mb-2 inline-block">Mais popular</span>
             )}
             <h3 className="text-xl font-bold">{plan.name}</h3>
             <p className="mt-2">
@@ -37,7 +33,7 @@ export default function AdminPlanosPage() {
             <ul className="mt-4 space-y-2">
               {plan.features.map((f) => (
                 <li key={f} className="flex items-start gap-2 text-sm text-muted">
-                  <span className="text-accent">✓</span>
+                  <span className="text-muted">✓</span>
                   {f}
                 </li>
               ))}

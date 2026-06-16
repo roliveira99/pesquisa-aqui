@@ -51,7 +51,7 @@ export function AdminHome() {
         <div className="card p-5">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-semibold text-foreground">Oficinas na plataforma</h2>
-            <Link href="/dashboard/admin/oficinas" className="text-sm font-medium text-accent hover:text-accent-hover">
+            <Link href="/dashboard/admin/oficinas" className="dash-link text-sm font-medium">
               Gerenciar
             </Link>
           </div>
@@ -71,7 +71,7 @@ export function AdminHome() {
         <div className="card p-5">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-semibold text-foreground">Fluxo recomendado</h2>
-            <Link href="/dashboard/admin/contas" className="text-sm font-medium text-accent hover:text-accent-hover">
+            <Link href="/dashboard/admin/contas" className="dash-link text-sm font-medium">
               Contas
             </Link>
           </div>

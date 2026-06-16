@@ -17,14 +17,14 @@ export default function AdminSuportePage() {
 
   const priorityColors = {
     baixa: "text-muted",
-    media: "text-yellow-400",
-    alta: "text-red-400",
+    media: "text-muted-foreground",
+    alta: "text-foreground font-medium",
   };
 
   const statusColors = {
-    aberto: "bg-yellow-500/15 text-yellow-400",
-    em_andamento: "bg-blue-500/15 text-blue-400",
-    resolvido: "bg-emerald-500/15 text-emerald-400",
+    aberto: "dash-badge",
+    em_andamento: "dash-badge font-medium text-foreground",
+    resolvido: "dash-badge",
   };
 
   return (

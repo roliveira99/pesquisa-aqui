@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { DashboardThemeToggle } from "@/components/dashboard/DashboardThemeToggle";
 import { Logo } from "@/components/ui/Logo";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
@@ -35,42 +36,47 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-background">
+    <div className="dashboard-app min-h-[calc(100vh-4rem)] bg-background">
       <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-6xl lg:grid-cols-2">
-        <div className="hidden flex-col justify-between bg-sidebar p-10 text-white lg:flex xl:p-14">
-          <Logo variant="light" />
+        <div className="hidden flex-col justify-between border-r border-[var(--dash-sidebar-border)] bg-[var(--dash-sidebar)] p-10 lg:flex xl:p-14">
+          <Logo variant="system" />
           <div>
-            <h1 className="text-3xl font-semibold leading-tight">
+            <h1 className="text-3xl font-semibold leading-tight text-[var(--dash-sidebar-active-text)]">
               Gestão profissional para oficinas automotivas
             </h1>
-            <p className="mt-4 max-w-md text-sm leading-relaxed text-sidebar-text">
+            <p className="mt-4 max-w-md text-sm leading-relaxed text-[var(--dash-sidebar-text)]">
               Acesse o painel conforme seu perfil. Cada usuário visualiza apenas
               o que tem permissão — financeiro, operação ou execução técnica.
             </p>
-            <ul className="mt-8 space-y-3 text-sm text-sidebar-text">
+            <ul className="mt-8 space-y-3 text-sm text-[var(--dash-sidebar-text)]">
               <li className="flex items-center gap-2">
-                <Icon name="dashboard" className="h-4 w-4 text-accent" />
+                <Icon name="dashboard" className="h-4 w-4 opacity-70" />
                 Dashboards por perfil de acesso
               </li>
               <li className="flex items-center gap-2">
-                <Icon name="chart" className="h-4 w-4 text-accent" />
+                <Icon name="chart" className="h-4 w-4 opacity-70" />
                 Relatórios e indicadores em tempo real
               </li>
               <li className="flex items-center gap-2">
-                <Icon name="users" className="h-4 w-4 text-accent" />
+                <Icon name="users" className="h-4 w-4 opacity-70" />
                 Controle de equipe e permissões
               </li>
             </ul>
           </div>
-          <p className="text-xs text-sidebar-text">
+          <p className="text-xs text-[var(--dash-sidebar-text)]">
             © MP Oficinas — Plataforma de gestão automotiva
           </p>
         </div>
 
         <div className="flex flex-col justify-center px-4 py-12 sm:px-8">
           <div className="mx-auto w-full max-w-md">
-            <div className="mb-8 lg:hidden">
-              <Logo />
+            <div className="mb-8 flex items-start justify-between gap-4 lg:hidden">
+              <Logo variant="system" />
+              <DashboardThemeToggle compact />
+            </div>
+
+            <div className="mb-8 hidden items-center justify-end lg:flex">
+              <DashboardThemeToggle />
             </div>
 
             <h2 className="text-2xl font-semibold tracking-tight">Entrar</h2>
@@ -109,11 +115,7 @@ export default function LoginPage() {
                 />
               </div>
 
-              {error && (
-                <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">
-                  {error}
-                </p>
-              )}
+              {error && <p className="dash-alert dash-alert-error">{error}</p>}
 
               <Button type="submit" variant="primary" className="w-full">
                 Entrar no painel
@@ -121,7 +123,7 @@ export default function LoginPage() {
             </form>
 
             <p className="mt-8 text-center text-sm text-muted">
-              <Link href="/" className="font-medium text-accent hover:text-accent-hover">
+              <Link href="/" className="dash-link font-medium">
                 ← Voltar ao site
               </Link>
             </p>

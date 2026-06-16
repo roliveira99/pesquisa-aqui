@@ -36,7 +36,7 @@ export default function EstoquePage() {
             p.qtd < p.min ? (
               <span className="text-red-400">Estoque baixo</span>
             ) : (
-              <span className="text-emerald-400">OK</span>
+              <span className="dash-badge">OK</span>
             ),
           ])}
         />

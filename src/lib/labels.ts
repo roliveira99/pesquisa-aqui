@@ -24,8 +24,8 @@ export const orderStatusLabels = {
 } as const;
 
 export const orderStatusColors = {
-  pendente: "bg-warning-soft text-warning",
-  em_andamento: "bg-accent-soft text-accent",
-  concluido: "bg-success-soft text-success",
-  cancelado: "bg-danger-soft text-danger",
+  pendente: "dash-badge",
+  em_andamento: "dash-badge font-medium text-foreground",
+  concluido: "dash-badge",
+  cancelado: "dash-badge opacity-60",
 } as const;

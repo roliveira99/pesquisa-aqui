@@ -40,7 +40,7 @@ export function MechanicHome() {
       <div className="card mb-8 overflow-hidden">
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <h2 className="font-semibold text-foreground">Serviços ativos</h2>
-          <Link href="/dashboard/mecanico/servicos" className="text-sm font-medium text-accent hover:text-accent-hover">
+          <Link href="/dashboard/mecanico/servicos" className="dash-link text-sm font-medium">
             Ver todos
           </Link>
         </div>
@@ -51,9 +51,7 @@ export function MechanicHome() {
                 <p className="font-medium text-foreground">{s.id} — {s.vehicle}</p>
                 <p className="text-muted">{s.service}</p>
               </div>
-              <span className="rounded-md bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent">
-                {s.status}
-              </span>
+              <span className="dash-badge">{s.status}</span>
             </li>
           ))}
         </ul>
@@ -61,12 +59,16 @@ export function MechanicHome() {
 
       <div className="mb-8 grid gap-4 sm:grid-cols-2">
         <Link href="/dashboard/mecanico/orcamentos" className="card card-hover p-5">
-          <Icon name="clipboard" className="mb-3 h-6 w-6 text-accent" />
+          <div className="dash-icon-box mb-3">
+            <Icon name="clipboard" className="h-5 w-5" />
+          </div>
           <h3 className="font-semibold text-foreground">Novo orçamento</h3>
           <p className="mt-1 text-sm text-muted">Criar proposta para cliente</p>
         </Link>
         <Link href="/dashboard/mecanico/produtividade" className="card card-hover p-5">
-          <Icon name="chart" className="mb-3 h-6 w-6 text-accent" />
+          <div className="dash-icon-box mb-3">
+            <Icon name="chart" className="h-5 w-5" />
+          </div>
           <h3 className="font-semibold text-foreground">Produtividade</h3>
           <p className="mt-1 text-sm text-muted">Acompanhar desempenho</p>
         </Link>

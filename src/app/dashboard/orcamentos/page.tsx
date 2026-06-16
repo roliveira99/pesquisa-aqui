@@ -130,9 +130,7 @@ export default function OrcamentosPage() {
       />
 
       {message && (
-        <p className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">
-          {message}
-        </p>
+        <p className="dash-alert">{message}</p>
       )}
 
       {showForm && (
@@ -196,8 +194,8 @@ export default function OrcamentosPage() {
               required
             />
           </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          <button type="submit" className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground">
+          {error && <p className="text-sm text-danger">{error}</p>}
+          <button type="submit" className="btn btn-primary">
             Criar e atribuir
           </button>
         </form>

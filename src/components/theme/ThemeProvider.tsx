@@ -31,6 +31,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    if (mounted) applyTheme(theme);
+  }, [theme, mounted]);
+
   const setTheme = useCallback((newTheme: Theme) => {
     setThemeState(newTheme);
     saveTheme(newTheme);

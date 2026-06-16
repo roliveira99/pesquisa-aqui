@@ -49,9 +49,7 @@ export default function AdminPatrociniosPage() {
       />
 
       {message && (
-        <p className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">
-          {message}
-        </p>
+        <p className="dash-alert">{message}</p>
       )}
 
       <p className="mb-6 text-sm text-muted">

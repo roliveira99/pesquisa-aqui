@@ -4,11 +4,12 @@ export function ThemeScript() {
   const script = `
     (function () {
       try {
-        var theme = localStorage.getItem("${THEME_KEY}");
-        document.documentElement.setAttribute(
-          "data-theme",
-          theme === "light" ? "light" : "${DEFAULT_THEME}"
-        );
+        var stored = localStorage.getItem("${THEME_KEY}");
+        var theme = stored;
+        if (theme !== "light" && theme !== "dark") {
+          theme = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "${DEFAULT_THEME}";
+        }
+        document.documentElement.setAttribute("data-theme", theme);
       } catch (e) {
         document.documentElement.setAttribute("data-theme", "${DEFAULT_THEME}");
       }

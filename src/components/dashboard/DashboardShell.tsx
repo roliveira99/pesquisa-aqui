@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
+import { DashboardThemeToggle } from "@/components/dashboard/DashboardThemeToggle";
 import { Logo } from "@/components/ui/Logo";
 import { Icon } from "@/components/ui/Icon";
 
@@ -24,12 +25,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   }, [sidebarOpen]);
 
   return (
-    <div className="flex min-h-screen">
+    <div className="dashboard-app flex min-h-screen">
       {sidebarOpen && (
         <button
           type="button"
           aria-label="Fechar menu"
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -40,21 +41,24 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-surface/95 px-4 py-3 backdrop-blur-md lg:hidden">
-          <button
-            type="button"
-            onClick={() => setSidebarOpen((v) => !v)}
-            className="rounded-lg p-2 text-muted-foreground hover:bg-surface-hover"
-            aria-label={sidebarOpen ? "Fechar menu" : "Abrir menu"}
-            aria-expanded={sidebarOpen}
-          >
-            <Icon name={sidebarOpen ? "x" : "menu"} className="h-5 w-5" />
-          </button>
-          <Logo size="sm" />
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-border bg-surface px-4 py-2.5 lg:hidden">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setSidebarOpen((v) => !v)}
+              className="rounded border border-border p-2 text-muted-foreground hover:bg-surface-hover"
+              aria-label={sidebarOpen ? "Fechar menu" : "Abrir menu"}
+              aria-expanded={sidebarOpen}
+            >
+              <Icon name={sidebarOpen ? "x" : "menu"} className="h-5 w-5" />
+            </button>
+            <Logo variant="system" size="sm" />
+          </div>
+          <DashboardThemeToggle compact />
         </header>
 
         <div className="dashboard-shell flex-1 overflow-auto">
-          <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">{children}</div>
+          <div className="mx-auto max-w-[1400px] p-4 sm:p-5 lg:p-6">{children}</div>
         </div>
       </div>
     </div>

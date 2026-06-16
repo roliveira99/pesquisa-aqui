@@ -6,8 +6,8 @@ const variants: Record<ButtonVariant, string> = {
   primary: "btn btn-primary",
   secondary: "btn btn-secondary",
   ghost: "btn btn-ghost",
-  danger: "bg-danger-soft text-danger hover:bg-red-100 btn",
-  success: "bg-success-soft text-success hover:bg-emerald-100 btn",
+  danger: "btn btn-secondary border-danger/30 text-danger",
+  success: "btn btn-secondary",
 };
 
 interface ButtonProps {

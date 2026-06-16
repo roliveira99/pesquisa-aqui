@@ -44,14 +44,14 @@ export function OwnerHome() {
       <div className="card mb-8 overflow-hidden">
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <h2 className="font-semibold text-foreground">Ordens recentes</h2>
-          <Link href="/dashboard/orcamentos" className="text-sm font-medium text-accent hover:text-accent-hover">
+          <Link href="/dashboard/orcamentos" className="dash-link text-sm font-medium">
             Ver orçamentos
           </Link>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-surface-hover/80 text-left text-xs uppercase tracking-wide text-muted">
+              <tr className="dash-table-head border-b border-border text-left">
                 <th className="px-5 py-3 font-semibold">OS</th>
                 <th className="px-5 py-3 font-semibold">Cliente</th>
                 <th className="px-5 py-3 font-semibold">Veículo</th>

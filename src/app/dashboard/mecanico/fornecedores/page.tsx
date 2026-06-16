@@ -80,7 +80,7 @@ export default function FornecedoresPage() {
         </div>
         <button
           type="submit"
-          className="mt-4 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground hover:opacity-90"
+          className="mt-4 btn btn-primary hover:opacity-90"
         >
           Adicionar contato
         </button>
@@ -92,7 +92,7 @@ export default function FornecedoresPage() {
             <div className="flex items-start justify-between gap-2">
               <div>
                 <h3 className="font-semibold text-foreground">{supplier.name}</h3>
-                <p className="mt-1 text-lg font-medium text-accent">{supplier.phone}</p>
+                <p className="mt-1 text-lg font-medium text-foreground">{supplier.phone}</p>
                 {supplier.notes && (
                   <p className="mt-2 text-xs text-muted">{supplier.notes}</p>
                 )}

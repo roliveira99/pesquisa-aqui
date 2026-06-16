@@ -17,5 +17,10 @@ export function saveTheme(theme: Theme) {
 }
 
 export function getInitialTheme(): Theme {
-  return getStoredTheme() ?? DEFAULT_THEME;
+  const stored = getStoredTheme();
+  if (stored) return stored;
+  if (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: light)").matches) {
+    return "light";
+  }
+  return DEFAULT_THEME;
 }

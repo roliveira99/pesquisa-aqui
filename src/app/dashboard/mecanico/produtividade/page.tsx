@@ -33,7 +33,7 @@ export default function MecanicoProdutividadePage() {
                 <span className="w-16 text-sm text-muted">{w.semana}</span>
                 <div className="h-2 flex-1 rounded-full bg-background">
                   <div
-                    className="h-2 rounded-full bg-accent"
+                    className="h-2 rounded-full bg-border-strong"
                     style={{ width: `${(w.qtd / 5) * 100}%` }}
                   />
                 </div>

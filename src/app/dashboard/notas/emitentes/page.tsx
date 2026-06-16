@@ -83,16 +83,14 @@ export default function EmitentesNotasPage() {
         title="Emitentes e modelo da nota"
         description="Cadastre vários CNPJs e nomes — escolha qual usar ao enviar a nota ao cliente"
         actions={
-          <Link href="/dashboard/notas" className="text-sm font-medium text-accent hover:underline">
+          <Link href="/dashboard/notas" className="dash-link text-sm font-medium">
             ← Voltar às notas
           </Link>
         }
       />
 
       {saved && (
-        <p className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">
-          {saved}
-        </p>
+        <p className="dash-alert">{saved}</p>
       )}
 
       <section className="card mb-8 p-5">
@@ -116,7 +114,7 @@ export default function EmitentesNotasPage() {
             <input required value={city} onChange={(e) => setCity(e.target.value)} className="input-field" placeholder="Cidade" />
             <input required value={state} onChange={(e) => setState(e.target.value)} className="input-field" placeholder="UF" maxLength={2} />
             <input value={email} onChange={(e) => setEmail(e.target.value)} className="input-field sm:col-span-2" placeholder="E-mail (opcional)" />
-            <button type="submit" className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground sm:col-span-2">
+            <button type="submit" className="btn btn-primary sm:col-span-2">
               Salvar emitente
             </button>
           </form>
@@ -127,7 +125,7 @@ export default function EmitentesNotasPage() {
             <li key={i.id} className="flex flex-wrap items-start justify-between gap-3 py-4">
               <div>
                 <p className="font-semibold">
-                  {i.label} {i.isDefault && <span className="text-xs text-accent">(padrão)</span>}
+                  {i.label} {i.isDefault && <span className="dash-badge text-xs">(padrão)</span>}
                 </p>
                 <p className="text-sm">{i.tradeName}</p>
                 <p className="text-xs text-muted">{i.legalName}</p>
@@ -181,7 +179,7 @@ export default function EmitentesNotasPage() {
               className="input-field w-24"
             />
           </label>
-          <button type="submit" className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground">
+          <button type="submit" className="btn btn-primary">
             Salvar modelo
           </button>
         </form>

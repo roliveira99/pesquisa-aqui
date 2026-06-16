@@ -21,8 +21,8 @@ export default function MecanicoOrcamentosPage() {
       />
 
       {submitted ? (
-        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-6 text-center">
-          <p className="text-lg font-semibold text-emerald-400">Orçamento enviado para aprovação!</p>
+        <div className="card p-6 text-center">
+          <p className="text-lg font-semibold text-foreground">Orçamento enviado para aprovação!</p>
           <p className="mt-2 text-sm text-muted">A gerência será notificada para revisar e aprovar.</p>
           <ActionButton label="Criar outro" variant="primary" onClick={() => setSubmitted(false)} />
         </div>

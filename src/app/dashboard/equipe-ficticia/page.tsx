@@ -95,8 +95,8 @@ export default function EquipeFicticiaPage() {
                   placeholder="Observação (opcional)"
                 />
               </div>
-              {error && <p className="text-sm text-red-600">{error}</p>}
-              <button type="submit" className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground">
+              {error && <p className="text-sm text-danger">{error}</p>}
+              <button type="submit" className="btn btn-primary">
                 Salvar perfil
               </button>
             </form>
@@ -109,7 +109,7 @@ export default function EquipeFicticiaPage() {
               m.specialty ?? "—",
               m.notes ?? "—",
               m.active ? (
-                <span key={`st-${m.id}`} className="text-xs font-medium text-emerald-600">
+                <span key={`st-${m.id}`} className="dash-badge text-xs">
                   Ativo
                 </span>
               ) : (

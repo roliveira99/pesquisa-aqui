@@ -98,11 +98,8 @@ export function ClientesTab({ workshopId }: ClientesTabProps) {
               placeholder="Telefone / WhatsApp"
             />
           </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          <button
-            type="submit"
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground"
-          >
+          {error && <p className="text-sm text-danger">{error}</p>}
+          <button type="submit" className="btn btn-primary">
             Salvar cliente
           </button>
         </form>
@@ -116,10 +113,7 @@ export function ClientesTab({ workshopId }: ClientesTabProps) {
           c.phone || "—",
           vehicles.filter((v) => v.clientId === c.id).length,
           c.completedServices.length > 0 ? (
-            <span
-              key={`rev-${c.id}`}
-              className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400"
-            >
+            <span key={`rev-${c.id}`} className="dash-badge">
               Pode avaliar ({c.completedServices.length} serviço{c.completedServices.length > 1 ? "s" : ""})
             </span>
           ) : (
@@ -221,10 +215,10 @@ export function VeiculosTab({ workshopId }: VeiculosTabProps) {
                   placeholder="Modelo / ano"
                 />
               </div>
-              {error && <p className="text-sm text-red-600">{error}</p>}
+              {error && <p className="text-sm text-danger">{error}</p>}
               <button
                 type="submit"
-                className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground"
+                className="btn btn-primary"
               >
                 Salvar veículo
               </button>

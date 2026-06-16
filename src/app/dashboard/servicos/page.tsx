@@ -115,7 +115,7 @@ export default function ServicosPage() {
               </select>
             </div>
           ) : (
-            <span key={`ok-${s.id}`} className="text-xs text-emerald-600">
+            <span key={`ok-${s.id}`} className="dash-badge text-xs">
               Concluído
             </span>
           ),

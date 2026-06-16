@@ -129,7 +129,7 @@ export default function AdminAnunciosPage() {
               placeholder="Texto do link"
             />
           </div>
-          <button type="submit" className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground">
+          <button type="submit" className="btn btn-primary">
             Publicar
           </button>
         </form>

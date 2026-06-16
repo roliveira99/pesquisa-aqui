@@ -158,7 +158,7 @@ export function QuoteDocumentActions({ payload, issuer, template, onClose }: Quo
         <button
           type="button"
           onClick={handlePrint}
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground"
+          className="btn btn-primary"
         >
           Imprimir / PDF
         </button>

@@ -75,9 +75,7 @@ export default function MidiaPage() {
       />
 
       {message && (
-        <p className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">
-          {message}
-        </p>
+        <p className="dash-alert">{message}</p>
       )}
 
       <form onSubmit={handleSave} className="space-y-6">
@@ -166,7 +164,7 @@ export default function MidiaPage() {
 
         <button
           type="submit"
-          className="rounded-lg bg-accent px-6 py-2.5 text-sm font-semibold text-accent-foreground hover:opacity-90"
+          className="btn btn-primary"
         >
           Salvar alterações
         </button>

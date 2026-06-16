@@ -74,13 +74,13 @@ export default function CatalogoPublicoPage() {
         description="Serviços e peças exibidos no seu perfil — como um cardápio da oficina. Preços são referência e podem mudar no orçamento."
       />
 
-      <p className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
+      <p className="dash-alert mb-6">
         {PRICE_DISCLAIMER}
       </p>
 
       <p className="mb-6 text-sm text-muted">
         Visualize como o cliente vê:{" "}
-        <Link href={`/oficinas/${workshop.slug}`} className="font-medium text-accent hover:underline">
+        <Link href={`/oficinas/${workshop.slug}`} className="dash-link font-medium">
           {workshop.name} no site público
         </Link>
       </p>
@@ -159,7 +159,7 @@ function CatalogEditor({
         />
         <button
           type="submit"
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground"
+          className="btn btn-primary"
         >
           Adicionar
         </button>
@@ -184,7 +184,7 @@ function CatalogEditor({
             <button
               type="button"
               onClick={() => onRemove(type, item.id)}
-              className="text-sm text-red-600 hover:underline"
+              className="dash-link text-sm text-danger"
             >
               Remover
             </button>

@@ -12,10 +12,10 @@ export default function AdminAssinaturasPage() {
   const mrr = active.reduce((sum, s) => sum + s.value, 0);
 
   const statusColors: Record<string, string> = {
-    ativa: "text-emerald-400",
-    atrasada: "text-red-400",
-    cancelada: "text-muted",
-    suspensa: "text-orange-400",
+    ativa: "dash-badge font-medium text-foreground",
+    atrasada: "dash-badge",
+    cancelada: "dash-badge opacity-60",
+    suspensa: "dash-badge",
   };
 
   return (

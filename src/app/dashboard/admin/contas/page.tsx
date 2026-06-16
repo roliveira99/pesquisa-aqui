@@ -94,14 +94,8 @@ export default function AdminContasPage() {
         }
       />
 
-      {message && (
-        <p className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">
-          {message}
-        </p>
-      )}
-      {error && (
-        <p className="mb-4 rounded-lg bg-danger-soft px-4 py-3 text-sm text-danger">{error}</p>
-      )}
+      {message && <p className="dash-alert">{message}</p>}
+      {error && <p className="dash-alert dash-alert-error">{error}</p>}
 
       {workshops.length === 0 && (
         <p className="mb-4 rounded-lg border border-border bg-surface p-4 text-sm text-muted">
@@ -127,7 +121,7 @@ export default function AdminContasPage() {
               ))}
             </select>
           </div>
-          <button type="submit" className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground">
+          <button type="submit" className="btn btn-primary">
             Criar conta
           </button>
         </form>
