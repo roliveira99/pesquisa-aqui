@@ -2,10 +2,30 @@ import { PrismaClient } from "@prisma/client";
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
 
-function resolveDatabaseUrl(raw?: string): string | undefined {
-  const url = raw?.trim();
+function stripWrappingQuotes(value: string): string {
+  const trimmed = value.trim();
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1).trim();
+  }
+  return trimmed;
+}
+
+function sanitizeRawDatabaseUrl(raw?: string): string | undefined {
+  let url = raw?.trim();
   if (!url) return undefined;
 
+  if (/^DATABASE_URL\s*=/i.test(url)) {
+    url = url.replace(/^DATABASE_URL\s*=\s*/i, "");
+  }
+
+  url = stripWrappingQuotes(url);
+  return url || undefined;
+}
+
+function appendDefaultConnectionParams(url: string): string {
   const params = new URLSearchParams();
   const [base, query = ""] = url.split("?");
   if (query) {
@@ -24,6 +44,35 @@ function resolveDatabaseUrl(raw?: string): string | undefined {
 
   const serialized = params.toString();
   return serialized ? `${base}?${serialized}` : base;
+}
+
+function resolveDatabaseUrl(raw?: string): string | undefined {
+  const url = sanitizeRawDatabaseUrl(raw);
+  if (!url) return undefined;
+
+  if (!url.startsWith("postgresql://") && !url.startsWith("postgres://")) {
+    return undefined;
+  }
+
+  return appendDefaultConnectionParams(url);
+}
+
+export function getDatabaseUrlValidationError(raw?: string): string | undefined {
+  const sanitized = sanitizeRawDatabaseUrl(raw);
+  if (!sanitized) {
+    return "DATABASE_URL não configurada.";
+  }
+  if (!sanitized.startsWith("postgresql://") && !sanitized.startsWith("postgres://")) {
+    const hadQuotes =
+      Boolean(raw?.trim().match(/^["']|["']$/)) ||
+      Boolean(raw?.includes('DATABASE_URL="')) ||
+      Boolean(raw?.includes("DATABASE_URL='"));
+    if (hadQuotes) {
+      return "DATABASE_URL malformada: remova aspas ao colar no Render (valor deve começar com postgresql://).";
+    }
+    return "DATABASE_URL inválida: deve começar com postgresql:// ou postgres://.";
+  }
+  return undefined;
 }
 
 const databaseUrl = resolveDatabaseUrl(process.env.DATABASE_URL);
@@ -69,6 +118,12 @@ export function isPrismaConnectionError(err: unknown): boolean {
 export function formatDatabaseError(err: unknown): string {
   if (!(err instanceof Error)) return "Erro desconhecido ao conectar.";
   const msg = err.message;
+  if (msg.includes("must start with the protocol `postgresql://`")) {
+    return (
+      getDatabaseUrlValidationError(process.env.DATABASE_URL) ??
+      "DATABASE_URL inválida no servidor (formato incorreto)."
+    );
+  }
   if (msg.toLowerCase().includes("password authentication failed")) {
     return "Senha do banco incorreta no servidor (DATABASE_URL desatualizada).";
   }
@@ -158,6 +213,16 @@ export async function checkDatabaseHealth(): Promise<{
   host?: string;
   usesPooler?: boolean;
 }> {
+  const validationError = getDatabaseUrlValidationError(process.env.DATABASE_URL);
+  if (validationError) {
+    const hasValue = Boolean(process.env.DATABASE_URL?.trim());
+    return {
+      configured: hasValue,
+      ok: false,
+      error: validationError,
+    };
+  }
+
   if (!isDatabaseConfigured()) {
     return { configured: false, ok: false, error: "DATABASE_URL não configurada." };
   }

@@ -10,6 +10,7 @@ import {
 } from "@/lib/db/auth";
 import {
   formatDatabaseError,
+  getDatabaseUrlValidationError,
   isDatabaseConfigured,
   isPrismaConnectionError,
   prisma,
@@ -43,6 +44,17 @@ export async function POST(request: Request) {
 
   if (!email || !password) {
     return NextResponse.json({ error: "E-mail e senha são obrigatórios." }, { status: 400 });
+  }
+
+  const urlError = getDatabaseUrlValidationError(process.env.DATABASE_URL);
+  if (urlError) {
+    return NextResponse.json(
+      {
+        error: `${urlError} No Render, cole só a URL (postgresql://...) sem aspas e sem "DATABASE_URL=".`,
+        code: "db_config",
+      },
+      { status: 503 }
+    );
   }
 
   if (!isDatabaseConfigured()) {
