@@ -229,6 +229,39 @@ export async function addVehicle(
   return { ok: true, vehicle: mapVehicle(row) };
 }
 
+export async function linkVehicleToClient(
+  workshopId: string,
+  vehicleId: string,
+  clientId: string
+): Promise<{ ok: true; vehicle: WorkshopVehicle } | { ok: false; error: string }> {
+  const [vehicle, client] = await Promise.all([
+    prisma.crmVehicle.findFirst({ where: { id: vehicleId, workshopId } }),
+    prisma.crmClient.findFirst({ where: { id: clientId, workshopId } }),
+  ]);
+  if (!vehicle) return { ok: false, error: "Veículo não encontrado." };
+  if (!client) return { ok: false, error: "Cliente não encontrado." };
+
+  const row = await prisma.crmVehicle.update({
+    where: { id: vehicleId },
+    data: { clientId },
+  });
+  return { ok: true, vehicle: mapVehicle(row) };
+}
+
+export async function unlinkVehicleFromClient(
+  workshopId: string,
+  vehicleId: string
+): Promise<{ ok: true; vehicle: WorkshopVehicle } | { ok: false; error: string }> {
+  const vehicle = await prisma.crmVehicle.findFirst({ where: { id: vehicleId, workshopId } });
+  if (!vehicle) return { ok: false, error: "Veículo não encontrado." };
+
+  const row = await prisma.crmVehicle.update({
+    where: { id: vehicleId },
+    data: { clientId: null },
+  });
+  return { ok: true, vehicle: mapVehicle(row) };
+}
+
 export async function createOrder(
   workshopId: string,
   input: {
@@ -239,6 +272,8 @@ export async function createOrder(
     mechanicKind: MechanicKind;
     clientId?: string;
     status?: ServiceOrderStatus;
+    lineItems?: import("@/types/document-line").DocumentLineItem[];
+    paymentMethods?: string[];
   }
 ): Promise<{ ok: true; order: WorkshopServiceOrder } | { ok: false; error: string }> {
   const vehicle = await prisma.crmVehicle.findFirst({
@@ -280,6 +315,8 @@ export async function createOrder(
       status: input.status ?? "pendente",
       date: new Date().toISOString().split("T")[0],
       value: input.value,
+      lineItems: input.lineItems ? (input.lineItems as object) : undefined,
+      paymentMethods: input.paymentMethods ? (input.paymentMethods as object) : undefined,
       mechanicId: assignee.id,
       mechanicKind: assignee.kind,
       mechanicName: assignee.name,

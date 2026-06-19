@@ -13,6 +13,7 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
     email: "admin@mpoficinas.com",
     password: "admin123",
     user: {
+      id: "demo-master",
       email: "admin@mpoficinas.com",
       name: "Administrador Master",
       role: "master",
@@ -28,6 +29,7 @@ export function isValidAuthUser(user: unknown): user is AuthUser {
   if (!user || typeof user !== "object") return false;
   const u = user as AuthUser;
   return (
+    typeof u.id === "string" &&
     typeof u.email === "string" &&
     typeof u.name === "string" &&
     VALID_ROLES.includes(u.role)

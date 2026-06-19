@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { StatCard } from "@/components/dashboard/StatCard";
+import { useCallback, useEffect, useState } from "react";
+import { DashboardMetricPanel } from "@/components/dashboard/DashboardMetricPanel";
 import { FeatureList, PageHeader } from "@/components/dashboard/DashboardUI";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { demoOrders } from "@/data/workshops";
 import { orderStatusColors, orderStatusLabels } from "@/lib/labels";
 import { roleRestrictions } from "@/lib/permissions";
+import type { WorkshopServiceOrder } from "@/types/client";
 
 const ownerFeatures = [
   "Dashboard completo da oficina",
@@ -23,9 +24,23 @@ const ownerFeatures = [
 
 export function OwnerHome() {
   const { user } = useAuth();
-  const ordersToday = demoOrders.filter((o) => o.date === "2026-06-15").length;
-  const inProgress = demoOrders.filter((o) => o.status === "em_andamento").length;
-  const monthlyRevenue = demoOrders.reduce((sum, o) => sum + o.value, 0);
+  const [orders, setOrders] = useState<WorkshopServiceOrder[]>([]);
+
+  const refresh = useCallback(async () => {
+    const res = await fetch("/api/crm");
+    if (res.ok) {
+      const data = (await res.json()) as { orders: WorkshopServiceOrder[] };
+      setOrders(data.orders.slice(0, 6));
+    }
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  const inProgress = orders.filter((o) => o.status === "em_andamento").length;
+  const today = new Date().toISOString().split("T")[0];
+  const ordersToday = orders.filter((o) => o.date === today).length;
 
   return (
     <div>
@@ -34,11 +49,30 @@ export function OwnerHome() {
         description={`Bem-vindo, ${user?.name} — ${user?.workshopName}`}
       />
 
-      <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Ordens hoje" value={ordersToday} icon="clipboard" trend="+2 vs ontem" />
+      <div className="mb-4 grid gap-4 sm:grid-cols-2">
+        <StatCard label="Ordens hoje" value={ordersToday} icon="clipboard" />
         <StatCard label="Em andamento" value={inProgress} icon="wrench" />
-        <StatCard label="Receita (mês)" value={`R$ ${monthlyRevenue.toLocaleString("pt-BR")}`} icon="wallet" />
-        <StatCard label="Clientes ativos" value={48} icon="users" trend="+5 este mês" />
+      </div>
+
+      <div className="mb-8 grid gap-4 lg:grid-cols-2">
+        <DashboardMetricPanel
+          title="Clientes atendidos"
+          subtitle="Veículos/clientes com serviço concluído no período"
+          icon="users"
+          mode="count"
+          valueKey="clientsServed"
+          previousKey="previousClientsServed"
+          breakdownKey="value"
+        />
+        <DashboardMetricPanel
+          title="Receita"
+          subtitle="Soma dos serviços concluídos no período"
+          icon="wallet"
+          mode="currency"
+          valueKey="revenue"
+          previousKey="previousRevenue"
+          breakdownKey="amount"
+        />
       </div>
 
       <div className="card mb-8 overflow-hidden">
@@ -60,27 +94,52 @@ export function OwnerHome() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {demoOrders.slice(0, 4).map((order) => (
-                <tr key={order.id}>
-                  <td className="px-5 py-3 font-mono text-xs text-muted">{order.id}</td>
-                  <td className="px-5 py-3 text-foreground">{order.clientName}</td>
-                  <td className="px-5 py-3 text-muted">{order.vehicle}</td>
-                  <td className="px-5 py-3">
-                    <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${orderStatusColors[order.status]}`}>
-                      {orderStatusLabels[order.status]}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3 font-medium text-foreground">
-                    R$ {order.value.toLocaleString("pt-BR")}
+              {orders.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-5 py-6 text-center text-muted">
+                    Nenhuma ordem registrada ainda.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                orders.map((order) => (
+                  <tr key={order.id}>
+                    <td className="px-5 py-3 font-mono text-xs text-muted">{order.id}</td>
+                    <td className="px-5 py-3 text-foreground">{order.clientName || "—"}</td>
+                    <td className="px-5 py-3 text-muted">{order.vehicle}</td>
+                    <td className="px-5 py-3">
+                      <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${orderStatusColors[order.status]}`}>
+                        {orderStatusLabels[order.status]}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 font-medium text-foreground">
+                      R$ {order.value.toLocaleString("pt-BR")}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
       <FeatureList allowed={ownerFeatures} restricted={roleRestrictions.dono} />
+    </div>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: string | number;
+  icon: "clipboard" | "wrench";
+}) {
+  return (
+    <div className="dash-stat">
+      <p className="text-xl font-semibold tabular-nums text-foreground">{value}</p>
+      <p className="mt-0.5 text-xs uppercase tracking-wide text-muted">{label}</p>
     </div>
   );
 }

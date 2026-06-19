@@ -26,6 +26,7 @@ export function WorkshopReviewsSection({ workshop, onStatsChange }: WorkshopRevi
   const [cpf, setCpf] = useState("");
   const [plate, setPlate] = useState("");
   const [registerName, setRegisterName] = useState("");
+  const [registerBirthDate, setRegisterBirthDate] = useState("");
   const [registerPhone, setRegisterPhone] = useState("");
   const [stars, setStars] = useState<StarRating | 0>(0);
   const [comment, setComment] = useState("");
@@ -84,12 +85,17 @@ export function WorkshopReviewsSection({ workshop, onStatsChange }: WorkshopRevi
       setError("Informe seu nome para concluir o cadastro.");
       return;
     }
+    if (!registerBirthDate) {
+      setError("Informe sua data de nascimento.");
+      return;
+    }
 
     const result = await verifyWorkshopClient(workshop.slug, {
       cpf,
       plate,
       name: registerName.trim(),
       phone: registerPhone.trim() || undefined,
+      birthDate: registerBirthDate,
     });
 
     if ("error" in result) {
@@ -160,6 +166,7 @@ export function WorkshopReviewsSection({ workshop, onStatsChange }: WorkshopRevi
     setCpf("");
     setPlate("");
     setRegisterName("");
+    setRegisterBirthDate("");
     setRegisterPhone("");
     setStars(0);
     setComment("");
@@ -270,6 +277,16 @@ export function WorkshopReviewsSection({ workshop, onStatsChange }: WorkshopRevi
                     onChange={(e) => setRegisterName(e.target.value)}
                     className="input-field mt-1.5"
                     placeholder="Nome completo"
+                  />
+                </label>
+                <label className="block text-sm">
+                  <span className="font-medium">Data de nascimento</span>
+                  <input
+                    required
+                    type="date"
+                    value={registerBirthDate}
+                    onChange={(e) => setRegisterBirthDate(e.target.value)}
+                    className="input-field mt-1.5"
                   />
                 </label>
                 <label className="block text-sm">

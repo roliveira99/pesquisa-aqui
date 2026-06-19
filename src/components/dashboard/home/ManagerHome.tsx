@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { StatCard } from "@/components/dashboard/StatCard";
+import { DashboardMetricPanel } from "@/components/dashboard/DashboardMetricPanel";
 import { FeatureList, PageHeader } from "@/components/dashboard/DashboardUI";
 import { Icon } from "@/components/ui/Icon";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { demoOrders } from "@/data/workshops";
 import { roleRestrictions } from "@/lib/permissions";
 
 const gerenciaFeatures = [
@@ -26,8 +25,6 @@ const quickLinks = [
 
 export function ManagerHome() {
   const { user } = useAuth();
-  const pending = demoOrders.filter((o) => o.status === "pendente").length;
-  const inProgress = demoOrders.filter((o) => o.status === "em_andamento").length;
 
   return (
     <div>
@@ -36,11 +33,25 @@ export function ManagerHome() {
         description={`${user?.name} — ${user?.workshopName}`}
       />
 
-      <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Orçamentos pendentes" value={pending} icon="clipboard" />
-        <StatCard label="Serviços em andamento" value={inProgress} icon="wrench" />
-        <StatCard label="Agendamentos hoje" value={6} icon="calendar" />
-        <StatCard label="Estoque baixo" value={3} icon="box" trend="Repor" trendPositive={false} />
+      <div className="mb-8 grid gap-4 lg:grid-cols-2">
+        <DashboardMetricPanel
+          title="Clientes atendidos"
+          subtitle="Atendimentos concluídos no período"
+          icon="users"
+          mode="count"
+          valueKey="clientsServed"
+          previousKey="previousClientsServed"
+          breakdownKey="value"
+        />
+        <DashboardMetricPanel
+          title="Receita"
+          subtitle="Faturamento de serviços concluídos"
+          icon="wallet"
+          mode="currency"
+          valueKey="revenue"
+          previousKey="previousRevenue"
+          breakdownKey="amount"
+        />
       </div>
 
       <div className="mb-8 grid gap-4 sm:grid-cols-3">

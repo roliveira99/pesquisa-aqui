@@ -387,6 +387,109 @@ body {
     padding: 1rem 1.125rem;
   }
 
+  .dashboard-app .dash-metric-panel {
+    border: 1px solid var(--dash-border);
+    background: linear-gradient(180deg, var(--dash-surface) 0%, var(--dash-surface-alt) 100%);
+    border-radius: calc(var(--dash-radius) + 2px);
+    padding: 1.25rem 1.375rem;
+  }
+
+  .dashboard-app .dash-metric-panel__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .dashboard-app .dash-metric-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+
+  .dashboard-app .dash-metric-tab {
+    border: 1px solid var(--dash-border);
+    background: var(--dash-surface);
+    padding: 0.25rem 0.625rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--dash-text-muted);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+
+  .dashboard-app .dash-metric-tab:hover {
+    background: var(--dash-surface-hover);
+    color: var(--dash-text);
+  }
+
+  .dashboard-app .dash-metric-tab--active {
+    border-color: var(--dash-accent);
+    background: var(--dash-accent-soft);
+    color: var(--dash-accent);
+  }
+
+  .dashboard-app .dash-metric-panel__value-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .dashboard-app .dash-metric-panel__value {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--dash-text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .dashboard-app .dash-metric-trend {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--dash-text-muted);
+  }
+
+  .dashboard-app .dash-metric-trend--up {
+    color: var(--dash-success);
+  }
+
+  .dashboard-app .dash-metric-bar-row {
+    display: grid;
+    grid-template-columns: 4.5rem 1fr auto;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .dashboard-app .dash-metric-bar-label {
+    font-size: 0.6875rem;
+    color: var(--dash-text-muted);
+  }
+
+  .dashboard-app .dash-metric-bar-track {
+    height: 0.375rem;
+    border-radius: 999px;
+    background: var(--dash-border);
+    overflow: hidden;
+  }
+
+  .dashboard-app .dash-metric-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--dash-accent);
+  }
+
+  .dashboard-app .dash-metric-bar-value {
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--dash-text);
+  }
+
   .dashboard-app .dash-badge {
     display: inline-flex;
     align-items: center;

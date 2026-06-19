@@ -21,6 +21,17 @@ export function userHasPermission(user: AuthUser, permission: Permission): boole
   return rolePermissions[user.role]?.includes(permission) ?? false;
 }
 
+export async function userHasEffectivePermission(
+  user: AuthUser,
+  permission: Permission
+): Promise<boolean> {
+  if (userHasPermission(user, permission)) return true;
+  if (user.role !== "gerencia") return false;
+
+  const { userHasGrant } = await import("@/lib/db/manager-permissions");
+  return userHasGrant(user.id, permission).catch(() => false);
+}
+
 export function userHasRole(user: AuthUser, roles: UserRole[]): boolean {
   return roles.includes(user.role);
 }

@@ -9,7 +9,9 @@ import {
   getAllMechanicAssignees,
   getCrmData,
   getMechanicProductivity,
+  linkVehicleToClient,
   setFictionalMechanicActive,
+  unlinkVehicleFromClient,
   updateOrderStatus,
 } from "@/lib/db/crm";
 import { getRequestUser, userHasPermission } from "@/lib/db/request-auth";
@@ -64,6 +66,18 @@ export async function POST(request: Request) {
         });
         return NextResponse.json(result);
       }
+      case "link-vehicle": {
+        const result = await linkVehicleToClient(
+          workshopId,
+          body.vehicleId as string,
+          body.clientId as string
+        );
+        return NextResponse.json(result);
+      }
+      case "unlink-vehicle": {
+        const result = await unlinkVehicleFromClient(workshopId, body.vehicleId as string);
+        return NextResponse.json(result);
+      }
       case "create-order": {
         const result = await createOrder(workshopId, {
           vehicleId: body.vehicleId as string,
@@ -73,6 +87,8 @@ export async function POST(request: Request) {
           mechanicKind: body.mechanicKind as MechanicKind,
           clientId: body.clientId as string | undefined,
           status: body.status as ServiceOrderStatus | undefined,
+          lineItems: body.lineItems as import("@/types/document-line").DocumentLineItem[] | undefined,
+          paymentMethods: body.paymentMethods as string[] | undefined,
         });
         return NextResponse.json(result);
       }

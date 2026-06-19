@@ -1,5 +1,6 @@
 "use client";
 
+import type { DocumentLineItem } from "@/types/document-line";
 import type {
   FictionalMechanic,
   MechanicAssignee,
@@ -38,6 +39,18 @@ export async function apiAddClient(input: { name: string; phone: string; cpf: st
   >;
 }
 
+export async function apiUnlinkVehicle(vehicleId: string) {
+  return crmPost({ action: "unlink-vehicle", vehicleId }) as Promise<
+    { ok: true; vehicle: WorkshopVehicle } | { ok: false; error: string }
+  >;
+}
+
+export async function apiLinkVehicle(vehicleId: string, clientId: string) {
+  return crmPost({ action: "link-vehicle", vehicleId, clientId }) as Promise<
+    { ok: true; vehicle: WorkshopVehicle } | { ok: false; error: string }
+  >;
+}
+
 export async function apiAddVehicle(input: { plate: string; model: string; clientId?: string }) {
   return crmPost({ action: "add-vehicle", ...input }) as Promise<
     { ok: true; vehicle: WorkshopVehicle } | { ok: false; error: string }
@@ -52,6 +65,8 @@ export async function apiCreateOrder(input: {
   mechanicKind: MechanicKind;
   clientId?: string;
   status?: ServiceOrderStatus;
+  lineItems?: DocumentLineItem[];
+  paymentMethods?: string[];
 }) {
   return crmPost({ action: "create-order", ...input }) as Promise<
     { ok: true; order: WorkshopServiceOrder } | { ok: false; error: string }
@@ -133,14 +148,22 @@ export async function fetchWorkshopMedia() {
   return res.json() as Promise<{
     coverImage: string | null;
     tagline: string | null;
+    slogan: string | null;
     gallery: import("@/types/workshop").WorkshopGalleryItem[];
+    profileVideos: string[];
+    profileHighlights: { title: string; body: string }[];
+    businessOpportunities: { title: string; body: string }[];
   }>;
 }
 
 export async function saveWorkshopMedia(input: {
   coverImage?: string;
   tagline?: string;
+  slogan?: string;
   gallery?: import("@/types/workshop").WorkshopGalleryItem[];
+  profileVideos?: string[];
+  profileHighlights?: { title: string; body: string }[];
+  businessOpportunities?: { title: string; body: string }[];
 }) {
   const res = await fetch("/api/workshop/media", {
     method: "PUT",
@@ -151,7 +174,11 @@ export async function saveWorkshopMedia(input: {
   return res.json() as Promise<{
     coverImage: string | null;
     tagline: string | null;
+    slogan: string | null;
     gallery: import("@/types/workshop").WorkshopGalleryItem[];
+    profileVideos: string[];
+    profileHighlights: { title: string; body: string }[];
+    businessOpportunities: { title: string; body: string }[];
   }>;
 }
 

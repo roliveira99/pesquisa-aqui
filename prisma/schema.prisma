@@ -120,6 +120,18 @@ model Workshop {
   fictionalMechanics FictionalMechanic[]
   suppliers       SupplierContact[]
   catalogOverride Json?
+  slogan          String?
+  profileVideos   Json?
+  profileHighlights Json?
+  businessOpportunities Json?
+  catalogItems    CatalogItem[]
+  budgets         WorkshopBudget[]
+  serviceNotes    ServiceNote[]
+  stockItems      StockItem[]
+  employeeCompensations EmployeeCompensation[]
+  salaryAdvances  SalaryAdvance[]
+  managerPermissions ManagerPermissionGrant[]
+  financialEntries FinancialEntry[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 }
@@ -148,6 +160,7 @@ model CrmClient {
   cpf               String
   name              String
   phone             String            @default("")
+  birthDate         DateTime?
   completedServices Json
   vehicles          CrmVehicle[]
   createdAt         DateTime          @default(now())
@@ -186,6 +199,8 @@ model CrmServiceOrder {
   status       ServiceOrderStatus @default(pendente)
   date         String
   value        Float
+  lineItems    Json?
+  paymentMethods Json?
   mechanicId   String?
   mechanicKind MechanicKind?
   mechanicName String?
@@ -259,4 +274,179 @@ model SiteAnnouncement {
   style     AnnouncementStyle
   active    Boolean               @default(true)
   createdAt DateTime
+}
+
+enum CatalogItemKind {
+  servico
+  peca
+}
+
+enum BudgetStatus {
+  rascunho
+  aguardando_aprovacao
+  aprovado
+  rejeitado
+  convertido
+}
+
+enum ServiceNoteStatus {
+  rascunho
+  emitida
+  paga
+}
+
+enum FinancialEntryKind {
+  receber
+  pagar
+}
+
+model CatalogItem {
+  id            String          @id @default(cuid())
+  workshopId    String
+  workshop      Workshop        @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  kind          CatalogItemKind
+  name          String
+  description   String?
+  unitPrice     Float
+  publicVisible Boolean         @default(true)
+  active        Boolean         @default(true)
+  stockItem     StockItem?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([workshopId, kind])
+  @@index([workshopId, publicVisible])
+}
+
+model StockItem {
+  id            String       @id @default(cuid())
+  workshopId    String
+  workshop      Workshop     @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  catalogItemId String?      @unique
+  catalogItem   CatalogItem? @relation(fields: [catalogItemId], references: [id], onDelete: SetNull)
+  name          String
+  sku           String?
+  quantity      Float        @default(0)
+  minQuantity   Float        @default(0)
+  unitPrice     Float?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([workshopId])
+}
+
+model WorkshopBudget {
+  id             String       @id @default(cuid())
+  workshopId     String
+  workshop       Workshop     @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  vehicleId      String
+  clientId       String?
+  status         BudgetStatus @default(rascunho)
+  lineItems      Json
+  paymentMethods Json?
+  subtotal       Float        @default(0)
+  total          Float        @default(0)
+  notes          String?
+  mechanicId     String?
+  mechanicKind   MechanicKind?
+  mechanicName   String?
+  createdById    String?
+  approvedAt     DateTime?
+  serviceNoteId  String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([workshopId, status])
+  @@index([vehicleId])
+}
+
+model ServiceNote {
+  id               String            @id @default(cuid())
+  workshopId       String
+  workshop         Workshop          @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  vehicleId        String
+  clientId         String?
+  budgetId         String?
+  status           ServiceNoteStatus @default(emitida)
+  lineItems        Json
+  paymentMethods   Json?
+  subtotal         Float             @default(0)
+  total            Float             @default(0)
+  mechanicId       String?
+  mechanicKind     MechanicKind?
+  mechanicName     String?
+  commissionRate   Float?
+  commissionAmount Float?
+  commissionPaid   Boolean           @default(false)
+  commissionPaidAt DateTime?
+  stockDeducted    Boolean           @default(false)
+  issuedAt         DateTime          @default(now())
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([workshopId])
+  @@index([workshopId, mechanicId])
+  @@index([budgetId])
+}
+
+model EmployeeCompensation {
+  id                  String   @id @default(cuid())
+  workshopId          String
+  workshop            Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  userId              String?
+  fictionalMechanicId String?
+  salary              Float    @default(0)
+  commissionRate      Float    @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([workshopId, userId])
+  @@unique([workshopId, fictionalMechanicId])
+  @@index([workshopId])
+}
+
+model SalaryAdvance {
+  id                  String   @id @default(cuid())
+  workshopId          String
+  workshop            Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  userId              String?
+  fictionalMechanicId String?
+  amount              Float
+  date                DateTime
+  notes               String?
+  createdAt           DateTime @default(now())
+
+  @@index([workshopId])
+}
+
+model ManagerPermissionGrant {
+  id         String   @id @default(cuid())
+  workshopId String
+  workshop   Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  userId     String
+  permission String
+  granted    Boolean  @default(true)
+
+  @@unique([userId, permission])
+  @@index([workshopId])
+}
+
+model FinancialEntry {
+  id                String             @id @default(cuid())
+  workshopId        String
+  workshop          Workshop           @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  kind              FinancialEntryKind
+  name              String
+  amount            Float
+  dueAt             DateTime?
+  paid              Boolean            @default(false)
+  paidAt            DateTime?
+  serviceNoteId     String?
+  reminderDayBefore Boolean            @default(true)
+  reminderSameDay   Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([workshopId, kind])
+  @@index([workshopId, dueAt])
 }

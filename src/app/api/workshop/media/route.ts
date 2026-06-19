@@ -22,7 +22,11 @@ export async function PUT(request: Request) {
   const body = (await request.json()) as {
     coverImage?: string;
     tagline?: string;
+    slogan?: string;
     gallery?: WorkshopGalleryItem[];
+    profileVideos?: string[];
+    profileHighlights?: { title: string; body: string }[];
+    businessOpportunities?: { title: string; body: string }[];
   };
 
   await updateWorkshopMedia(user.workshopId, body);

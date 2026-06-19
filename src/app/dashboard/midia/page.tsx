@@ -10,7 +10,11 @@ import type { WorkshopGalleryItem } from "@/types/workshop";
 export default function MidiaPage() {
   const [coverImage, setCoverImage] = useState("");
   const [tagline, setTagline] = useState("");
+  const [slogan, setSlogan] = useState("");
   const [gallery, setGallery] = useState<WorkshopGalleryItem[]>([]);
+  const [profileVideos, setProfileVideos] = useState<string[]>([]);
+  const [highlights, setHighlights] = useState<{ title: string; body: string }[]>([]);
+  const [opportunities, setOpportunities] = useState<{ title: string; body: string }[]>([]);
   const [newUrl, setNewUrl] = useState("");
   const [newCaption, setNewCaption] = useState("");
   const [message, setMessage] = useState("");
@@ -22,7 +26,11 @@ export default function MidiaPage() {
       const data = await fetchWorkshopMedia();
       setCoverImage(data.coverImage ?? "");
       setTagline(data.tagline ?? "");
+      setSlogan(data.slogan ?? "");
       setGallery(data.gallery ?? []);
+      setProfileVideos(data.profileVideos ?? []);
+      setHighlights(data.profileHighlights ?? []);
+      setOpportunities(data.businessOpportunities ?? []);
     } finally {
       setLoading(false);
     }
@@ -38,7 +46,11 @@ export default function MidiaPage() {
     await saveWorkshopMedia({
       coverImage: coverImage.trim(),
       tagline: tagline.trim(),
+      slogan: slogan.trim(),
       gallery,
+      profileVideos,
+      profileHighlights: highlights,
+      businessOpportunities: opportunities,
     });
     setMessage("Alterações salvas — visíveis no perfil público após recarregar a página.");
     await refresh();
@@ -70,8 +82,8 @@ export default function MidiaPage() {
   return (
     <PermissionGuard permissions={["owner.cadastro_servicos"]}>
       <PageHeader
-        title="Mídia e galeria"
-        description="Capa, frase de destaque e fotos do perfil público da oficina"
+        title="Perfil da oficina"
+        description="Fotos, vídeos, slogans e informações exibidas no perfil público"
       />
 
       {message && (
@@ -95,6 +107,15 @@ export default function MidiaPage() {
               />
             </label>
             <label className="block text-sm">
+              <span className="font-medium">Slogan</span>
+              <input
+                value={slogan}
+                onChange={(e) => setSlogan(e.target.value)}
+                className="input-field mt-1.5"
+                placeholder="Ex.: Qualidade que você confia"
+              />
+            </label>
+            <label className="block text-sm lg:col-span-2">
               <span className="font-medium">Frase de destaque (tagline)</span>
               <input
                 value={tagline}
@@ -110,6 +131,55 @@ export default function MidiaPage() {
               <img src={coverImage} alt="Prévia da capa" className="h-40 w-full object-cover" />
             </div>
           )}
+        </section>
+
+        <section className="card p-5">
+          <h2 className="font-semibold text-foreground">Vídeos (URLs YouTube/Vimeo)</h2>
+          <div className="mt-4 flex gap-2">
+            <input
+              value={newUrl}
+              onChange={(e) => setNewUrl(e.target.value)}
+              className="input-field flex-1"
+              placeholder="https://youtube.com/..."
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (!newUrl.trim()) return;
+                setProfileVideos((p) => [...p, newUrl.trim()]);
+                setNewUrl("");
+              }}
+              className="rounded-lg border border-border px-4 py-2 text-sm"
+            >
+              Adicionar vídeo
+            </button>
+          </div>
+          <ul className="mt-3 space-y-1 text-sm text-muted">
+            {profileVideos.map((v, i) => (
+              <li key={v} className="flex justify-between gap-2">
+                <span className="truncate">{v}</span>
+                <button type="button" className="text-danger" onClick={() => setProfileVideos((p) => p.filter((_, j) => j !== i))}>
+                  Remover
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="card p-5">
+          <h2 className="font-semibold text-foreground">Destaques e oportunidades</h2>
+          <ProfileBlockEditor
+            label="Informações relevantes"
+            items={highlights}
+            onChange={setHighlights}
+          />
+          <div className="mt-6">
+            <ProfileBlockEditor
+              label="Oportunidades de negócio"
+              items={opportunities}
+              onChange={setOpportunities}
+            />
+          </div>
         </section>
 
         <section className="card p-5">
@@ -170,5 +240,51 @@ export default function MidiaPage() {
         </button>
       </form>
     </PermissionGuard>
+  );
+}
+
+function ProfileBlockEditor({
+  label,
+  items,
+  onChange,
+}: {
+  label: string;
+  items: { title: string; body: string }[];
+  onChange: (items: { title: string; body: string }[]) => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+
+  return (
+    <div>
+      <p className="mb-2 text-sm font-medium">{label}</p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <input value={title} onChange={(e) => setTitle(e.target.value)} className="input-field" placeholder="Título" />
+        <input value={body} onChange={(e) => setBody(e.target.value)} className="input-field" placeholder="Descrição" />
+      </div>
+      <button
+        type="button"
+        className="mt-2 text-sm text-accent"
+        onClick={() => {
+          if (!title.trim()) return;
+          onChange([...items, { title: title.trim(), body: body.trim() }]);
+          setTitle("");
+          setBody("");
+        }}
+      >
+        + Adicionar bloco
+      </button>
+      <ul className="mt-3 space-y-2 text-sm">
+        {items.map((item, i) => (
+          <li key={`${item.title}-${i}`} className="rounded border border-border p-3">
+            <strong>{item.title}</strong>
+            <p className="text-muted">{item.body}</p>
+            <button type="button" className="mt-1 text-xs text-danger" onClick={() => onChange(items.filter((_, j) => j !== i))}>
+              Remover
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

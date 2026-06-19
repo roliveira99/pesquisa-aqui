@@ -9,6 +9,7 @@ const SESSION_DAYS = 7;
 
 export function toAuthUser(user: User, workshopName: string | null): AuthUser {
   return {
+    id: user.id,
     email: user.email,
     name: user.name,
     role: user.role as UserRole,

@@ -40,6 +40,7 @@ export async function POST(request: Request, context: RouteContext) {
     plate?: string;
     name?: string;
     phone?: string;
+    birthDate?: string;
     stars?: number;
     comment?: string;
     action?: "verify";
@@ -55,6 +56,7 @@ export async function POST(request: Request, context: RouteContext) {
       plate: body.plate,
       name: body.name,
       phone: body.phone,
+      birthDate: body.birthDate,
     });
 
     if (result.status === "not_eligible") {

@@ -17,7 +17,9 @@ import {
   apiUpdateOrderStatus,
   fetchCrm,
 } from "@/lib/api/crm-client";
+import { DocumentLineBuilder } from "@/components/dashboard/DocumentLineBuilder";
 import type { MechanicAssignee, MechanicKind, WorkshopServiceOrder, WorkshopVehicle } from "@/types/client";
+import type { DocumentLineItem } from "@/types/document-line";
 
 export default function OrcamentosPage() {
   const { user } = useAuth();
@@ -26,8 +28,8 @@ export default function OrcamentosPage() {
   const [showForm, setShowForm] = useState(false);
   const [assignees, setAssignees] = useState<MechanicAssignee[]>([]);
   const [vehicleId, setVehicleId] = useState("");
-  const [service, setService] = useState("");
-  const [value, setValue] = useState("");
+  const [lineItems, setLineItems] = useState<DocumentLineItem[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
   const [mechanicId, setMechanicId] = useState("");
   const [mechanicKind, setMechanicKind] = useState<MechanicKind>("fictional");
   const [message, setMessage] = useState("");
@@ -62,11 +64,20 @@ export default function OrcamentosPage() {
       setError("Selecione o veículo. Cadastre a placa em Cadastros se necessário.");
       return;
     }
+    if (lineItems.length === 0) {
+      setError("Adicione ao menos um serviço ou peça ao orçamento.");
+      return;
+    }
+
+    const total = lineItems.reduce((s, l) => s + l.total, 0);
+    const service = lineItems.map((l) => `${l.name} (${l.quantity}x)`).join("; ");
 
     const result = await apiCreateOrder({
       vehicleId,
       service,
-      value: Number(value),
+      value: total,
+      lineItems,
+      paymentMethods,
       mechanicId,
       mechanicKind,
       status: "pendente",
@@ -82,8 +93,8 @@ export default function OrcamentosPage() {
       `Orçamento ${result.order.id} criado e atribuído a ${assignee?.name ?? result.order.mechanicName}. Perfil fictício não acessa o sistema — você gerencia daqui.`
     );
     setVehicleId("");
-    setService("");
-    setValue("");
+    setLineItems([]);
+    setPaymentMethods([]);
     setMechanicId("");
     setShowForm(false);
     await refresh();
@@ -134,13 +145,16 @@ export default function OrcamentosPage() {
 
       {showForm && (
         <form onSubmit={handleCreate} className="card mb-6 space-y-4 p-5">
-          <h3 className="font-semibold">Novo orçamento / ordem de serviço</h3>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <h3 className="font-semibold">Novo orçamento</h3>
+          <p className="text-sm text-muted">
+            Monte o orçamento com itens do catálogo ou avulsos. Pode ser impresso ou enviado ao cliente após aprovação.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
             <select
               required
               value={vehicleId}
               onChange={(e) => setVehicleId(e.target.value)}
-              className="input-field sm:col-span-2"
+              className="input-field"
             >
               <option value="">Veículo (placa) *</option>
               {clientVehicles.map((v) => (
@@ -149,23 +163,6 @@ export default function OrcamentosPage() {
                 </option>
               ))}
             </select>
-            <input
-              required
-              value={service}
-              onChange={(e) => setService(e.target.value)}
-              className="input-field"
-              placeholder="Descrição do serviço"
-            />
-            <input
-              required
-              type="number"
-              min={1}
-              step={0.01}
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              className="input-field"
-              placeholder="Valor (R$)"
-            />
             <MechanicAssigneeSelect
               assignees={assignees}
               value={mechanicId}
@@ -177,9 +174,15 @@ export default function OrcamentosPage() {
               required
             />
           </div>
+          <DocumentLineBuilder
+            lineItems={lineItems}
+            onChange={setLineItems}
+            paymentMethods={paymentMethods}
+            onPaymentMethodsChange={setPaymentMethods}
+          />
           {error && <p className="text-sm text-danger">{error}</p>}
           <button type="submit" className="btn btn-primary">
-            Criar e atribuir
+            Criar orçamento e solicitar aprovação
           </button>
         </form>
       )}

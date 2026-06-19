@@ -24,16 +24,32 @@ export async function saveCatalogOverride(
 export async function getWorkshopMedia(workshopId: string): Promise<{
   coverImage: string | null;
   tagline: string | null;
+  slogan: string | null;
   gallery: WorkshopGalleryItem[];
+  profileVideos: string[];
+  profileHighlights: { title: string; body: string }[];
+  businessOpportunities: { title: string; body: string }[];
 }> {
   const row = await prisma.workshop.findUniqueOrThrow({
     where: { id: workshopId },
-    select: { coverImage: true, tagline: true, gallery: true },
+    select: {
+      coverImage: true,
+      tagline: true,
+      slogan: true,
+      gallery: true,
+      profileVideos: true,
+      profileHighlights: true,
+      businessOpportunities: true,
+    },
   });
   return {
     coverImage: row.coverImage,
     tagline: row.tagline,
+    slogan: row.slogan,
     gallery: (row.gallery as WorkshopGalleryItem[] | null) ?? [],
+    profileVideos: (row.profileVideos as string[] | null) ?? [],
+    profileHighlights: (row.profileHighlights as { title: string; body: string }[] | null) ?? [],
+    businessOpportunities: (row.businessOpportunities as { title: string; body: string }[] | null) ?? [],
   };
 }
 
@@ -42,7 +58,11 @@ export async function updateWorkshopMedia(
   input: {
     coverImage?: string;
     tagline?: string;
+    slogan?: string;
     gallery?: WorkshopGalleryItem[];
+    profileVideos?: string[];
+    profileHighlights?: { title: string; body: string }[];
+    businessOpportunities?: { title: string; body: string }[];
   }
 ): Promise<void> {
   await prisma.workshop.update({
@@ -50,8 +70,18 @@ export async function updateWorkshopMedia(
     data: {
       ...(input.coverImage !== undefined ? { coverImage: input.coverImage || null } : {}),
       ...(input.tagline !== undefined ? { tagline: input.tagline || null } : {}),
+      ...(input.slogan !== undefined ? { slogan: input.slogan || null } : {}),
       ...(input.gallery !== undefined
         ? { gallery: input.gallery as unknown as Prisma.InputJsonValue }
+        : {}),
+      ...(input.profileVideos !== undefined
+        ? { profileVideos: input.profileVideos as unknown as Prisma.InputJsonValue }
+        : {}),
+      ...(input.profileHighlights !== undefined
+        ? { profileHighlights: input.profileHighlights as unknown as Prisma.InputJsonValue }
+        : {}),
+      ...(input.businessOpportunities !== undefined
+        ? { businessOpportunities: input.businessOpportunities as unknown as Prisma.InputJsonValue }
         : {}),
     },
   });

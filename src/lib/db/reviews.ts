@@ -92,6 +92,7 @@ export async function verifyReviewEligibility(input: {
   plate: string;
   name?: string;
   phone?: string;
+  birthDate?: string;
 }): Promise<VerifyReviewResult> {
   const cpf = normalizeCpf(input.cpf);
   const plate = normalizePlate(input.plate);
@@ -147,6 +148,15 @@ export async function verifyReviewEligibility(input: {
     return { status: "needs_registration" };
   }
 
+  if (!input.birthDate?.trim()) {
+    return { status: "not_eligible", error: "Informe sua data de nascimento para concluir o cadastro." };
+  }
+
+  const birthDate = new Date(input.birthDate);
+  if (Number.isNaN(birthDate.getTime())) {
+    return { status: "not_eligible", error: "Data de nascimento inválida." };
+  }
+
   const name = input.name.trim();
   const phone = input.phone?.trim() ?? "";
 
@@ -160,6 +170,7 @@ export async function verifyReviewEligibility(input: {
       data: {
         name,
         phone: phone || undefined,
+        birthDate,
         completedServices: merged as unknown as Prisma.InputJsonValue,
       },
     });
@@ -180,6 +191,7 @@ export async function verifyReviewEligibility(input: {
         cpf,
         name,
         phone,
+        birthDate,
         completedServices: eligibleServices as unknown as Prisma.InputJsonValue,
       },
     });

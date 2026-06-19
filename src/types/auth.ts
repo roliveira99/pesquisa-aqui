@@ -64,6 +64,7 @@ export type Permission =
   | "mecanico.fornecedores";
 
 export interface AuthUser {
+  id: string;
   email: string;
   name: string;
   role: UserRole;
