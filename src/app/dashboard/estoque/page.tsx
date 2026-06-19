@@ -3,8 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { ActionButton, DataTable, PageHeader, TabPanel } from "@/components/dashboard/DashboardUI";
 import { PermissionGuard } from "@/components/dashboard/PermissionGuard";
-import { useAuth } from "@/components/auth/AuthProvider";
-import { hasPermission } from "@/lib/permissions";
 import type { Permission } from "@/types/auth";
 
 interface StockRow {
@@ -18,7 +16,6 @@ interface StockRow {
 }
 
 export default function EstoquePage() {
-  const { user } = useAuth();
   const [tab, setTab] = useState("consulta");
   const [items, setItems] = useState<StockRow[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -82,10 +79,12 @@ export default function EstoquePage() {
     await refresh();
   }
 
-  const permissions: Permission[] =
-    user?.role === "dono"
-      ? ["owner.estoque"]
-      : ["gerencia.estoque", "gerencia.entrada_pecas", "gerencia.saida_pecas"];
+  const permissions: Permission[] = [
+    "owner.estoque",
+    "gerencia.estoque",
+    "gerencia.entrada_pecas",
+    "gerencia.saida_pecas",
+  ];
 
   const tabs = [
     {
@@ -171,12 +170,7 @@ export default function EstoquePage() {
     <PermissionGuard permissions={permissions}>
       <PageHeader
         title="Estoque"
-        description="Peças internas ou públicas — usadas em orçamentos e notas"
-        actions={
-          user && hasPermission(user.role, "owner.cadastro_pecas") ? (
-            <ActionButton label="+ Nova peça" variant="primary" onClick={() => setShowForm(true)} />
-          ) : undefined
-        }
+        description="Peças internas ou públicas — usadas em orçamentos e notas. SKU é o código interno opcional da peça."
       />
       <TabPanel tabs={tabs} activeTab={tab} onTabChange={setTab} />
     </PermissionGuard>

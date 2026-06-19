@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createWorkshop, deleteWorkshop, listAdminWorkshops } from "@/lib/db/admin";
+import { setWorkshopBlocked } from "@/lib/db/workshop-team";
 import { getRequestUser, userHasPermission } from "@/lib/db/request-auth";
 import type { WorkshopType } from "@prisma/client";
 
@@ -77,6 +78,25 @@ export async function DELETE(request: Request) {
   if (!id) return NextResponse.json({ error: "ID obrigatório." }, { status: 400 });
 
   const result = await deleteWorkshop(id);
+  if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 });
+  return NextResponse.json({ ok: true });
+}
+
+export async function PATCH(request: Request) {
+  const user = await getRequestUser();
+  if (!user) {
+    return NextResponse.json({ error: "Sessão expirada." }, { status: 401 });
+  }
+  if (!userHasPermission(user, "admin.bloquear_oficinas")) {
+    return NextResponse.json({ error: "Sem permissão." }, { status: 403 });
+  }
+
+  const body = (await request.json()) as { workshopId?: string; blocked?: boolean };
+  if (!body.workshopId || body.blocked === undefined) {
+    return NextResponse.json({ error: "workshopId e blocked são obrigatórios." }, { status: 400 });
+  }
+
+  const result = await setWorkshopBlocked(body.workshopId, body.blocked);
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 });
   return NextResponse.json({ ok: true });
 }

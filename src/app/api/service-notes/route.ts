@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   createServiceNote,
+  createServiceNoteFromBudget,
   createServiceNoteFromOrder,
   listServiceNotes,
   markServiceNotePaid,
@@ -48,6 +49,13 @@ export async function POST(request: Request) {
   const workshopId = user.workshopId;
 
   switch (action) {
+    case "from-budget": {
+      if (!userHasPermission(user, "gerencia.emissao_notas") && !userHasPermission(user, "owner.emissao_pdf")) {
+        return NextResponse.json({ error: "Sem permissão." }, { status: 403 });
+      }
+      const result = await createServiceNoteFromBudget(workshopId, body.budgetId as string);
+      return NextResponse.json(result);
+    }
     case "from-order": {
       if (!userHasPermission(user, "gerencia.emissao_notas") && !userHasPermission(user, "owner.emissao_pdf")) {
         return NextResponse.json({ error: "Sem permissão." }, { status: 403 });

@@ -3,24 +3,10 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { DashboardMetricPanel } from "@/components/dashboard/DashboardMetricPanel";
-import { FeatureList, PageHeader } from "@/components/dashboard/DashboardUI";
+import { PageHeader } from "@/components/dashboard/DashboardUI";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { orderStatusColors, orderStatusLabels } from "@/lib/labels";
-import { roleRestrictions } from "@/lib/permissions";
 import type { WorkshopServiceOrder } from "@/types/client";
-
-const ownerFeatures = [
-  "Dashboard completo da oficina",
-  "Fluxo de caixa",
-  "Contas a pagar e receber",
-  "Estoque e cadastro de peças",
-  "Cadastro de serviços, clientes e veículos",
-  "Cadastro de funcionários",
-  "Controle de salários, comissões e ponto",
-  "Aprovação de orçamentos e alterações",
-  "Emissão de PDF e envio WhatsApp",
-  "Relatórios financeiros, operacionais e de produtividade",
-];
 
 export function OwnerHome() {
   const { user } = useAuth();
@@ -121,8 +107,6 @@ export function OwnerHome() {
           </table>
         </div>
       </div>
-
-      <FeatureList allowed={ownerFeatures} restricted={roleRestrictions.dono} />
     </div>
   );
 }

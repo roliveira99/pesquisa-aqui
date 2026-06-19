@@ -45,6 +45,7 @@ function mapVehicle(row: {
   clientId: string | null;
   plate: string;
   model: string;
+  year?: string | null;
   completedServices?: unknown;
 }): WorkshopVehicle {
   return {
@@ -53,6 +54,7 @@ function mapVehicle(row: {
     clientId: row.clientId,
     plate: row.plate,
     model: row.model,
+    year: row.year ?? undefined,
     completedServices: (row.completedServices ?? []) as CompletedServiceRecord[],
   };
 }
@@ -196,10 +198,11 @@ export async function addClient(
 
 export async function addVehicle(
   workshopId: string,
-  input: { plate: string; model: string; clientId?: string }
+  input: { plate: string; model: string; year?: string; clientId?: string }
 ): Promise<{ ok: true; vehicle: WorkshopVehicle } | { ok: false; error: string }> {
   const plate = input.plate.trim().toUpperCase();
   const model = input.model.trim();
+  const year = input.year?.trim() || null;
   if (!plate || !model) {
     return { ok: false, error: "Informe placa e modelo do veículo." };
   }
@@ -223,6 +226,7 @@ export async function addVehicle(
       clientId: input.clientId ?? null,
       plate,
       model,
+      year,
       completedServices: [],
     },
   });

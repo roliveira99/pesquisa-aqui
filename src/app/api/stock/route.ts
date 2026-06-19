@@ -47,6 +47,9 @@ export async function POST(request: Request) {
           quantity: Number(body.quantity),
           minQuantity: body.minQuantity !== undefined ? Number(body.minQuantity) : undefined,
           unitPrice: body.unitPrice !== undefined ? Number(body.unitPrice) : undefined,
+          costPrice: body.costPrice !== undefined ? Number(body.costPrice) : undefined,
+          salePrice: body.salePrice !== undefined ? Number(body.salePrice) : undefined,
+          markupPercent: body.markupPercent !== undefined ? Number(body.markupPercent) : undefined,
           publicVisible: body.publicVisible as boolean | undefined,
           kind: body.kind as "servico" | "peca" | undefined,
         });

@@ -62,6 +62,7 @@ export async function POST(request: Request) {
         const result = await addVehicle(workshopId, {
           plate: body.plate as string,
           model: body.model as string,
+          year: body.year as string | undefined,
           clientId: body.clientId as string | undefined,
         });
         return NextResponse.json(result);

@@ -1,24 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { ActionButton, TabPanel } from "@/components/dashboard/DashboardUI";
-import { PageHeader } from "@/components/dashboard/DashboardUI";
+import { PageHeader, TabPanel } from "@/components/dashboard/DashboardUI";
 import { ClientesTab, VeiculosTab } from "@/components/dashboard/CadastrosTabs";
+import {
+  FuncionariosTab,
+  PecasCadastroTab,
+  ServicosCadastroTab,
+} from "@/components/dashboard/CadastroExtraTabs";
 import { PermissionGuard } from "@/components/dashboard/PermissionGuard";
 import type { Permission } from "@/types/auth";
 import { useAuth } from "@/components/auth/AuthProvider";
-
-const servicos = [
-  { nome: "Troca de óleo", valor: 120, tempo: "30 min" },
-  { nome: "Alinhamento", valor: 80, tempo: "45 min" },
-  { nome: "Revisão freios", valor: 250, tempo: "2h" },
-];
-
-const funcionarios = [
-  { nome: "Maria Santos", cargo: "Gerente", email: "gerencia@mpoficinas.com" },
-  { nome: "Pedro Oliveira", cargo: "Mecânico", email: "mecanico@mpoficinas.com" },
-  { nome: "Lucas Ferreira", cargo: "Mecânico", email: "lucas@autocenter.com" },
-];
 
 export default function CadastrosPage() {
   const { user } = useAuth();
@@ -39,85 +31,9 @@ export default function CadastrosPage() {
     },
     ...(isOwner
       ? [
-          {
-            id: "pecas",
-            label: "Peças",
-            content: (
-              <div className="card overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border bg-surface-hover/80 text-left">
-                      {["Código", "Nome", "Valor", "Ações"].map((h) => (
-                        <th key={h} className="px-5 py-3 text-xs font-semibold uppercase text-muted">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    <tr>
-                      <td className="px-5 py-3.5">P-001</td>
-                      <td className="px-5 py-3.5">Filtro de óleo</td>
-                      <td className="px-5 py-3.5">R$ 35</td>
-                      <td className="px-5 py-3.5"><ActionButton label="Editar" /></td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            ),
-          },
-          {
-            id: "servicos",
-            label: "Serviços",
-            content: (
-              <div className="card overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border bg-surface-hover/80 text-left">
-                      {["Serviço", "Valor", "Tempo", "Ações"].map((h) => (
-                        <th key={h} className="px-5 py-3 text-xs font-semibold uppercase text-muted">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {servicos.map((s) => (
-                      <tr key={s.nome}>
-                        <td className="px-5 py-3.5">{s.nome}</td>
-                        <td className="px-5 py-3.5">R$ {s.valor}</td>
-                        <td className="px-5 py-3.5">{s.tempo}</td>
-                        <td className="px-5 py-3.5"><ActionButton label="Editar" /></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ),
-          },
-          {
-            id: "funcionarios",
-            label: "Funcionários",
-            content: (
-              <div className="card overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border bg-surface-hover/80 text-left">
-                      {["Nome", "Cargo", "E-mail", "Ações"].map((h) => (
-                        <th key={h} className="px-5 py-3 text-xs font-semibold uppercase text-muted">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {funcionarios.map((f) => (
-                      <tr key={f.email}>
-                        <td className="px-5 py-3.5">{f.nome}</td>
-                        <td className="px-5 py-3.5">{f.cargo}</td>
-                        <td className="px-5 py-3.5">{f.email}</td>
-                        <td className="px-5 py-3.5"><ActionButton label="Editar" /></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ),
-          },
+          { id: "pecas", label: "Peças", content: <PecasCadastroTab /> },
+          { id: "servicos", label: "Serviços", content: <ServicosCadastroTab /> },
+          { id: "funcionarios", label: "Funcionários", content: <FuncionariosTab /> },
         ]
       : []),
   ];
@@ -138,8 +54,8 @@ export default function CadastrosPage() {
         title={isOwner ? "Cadastros" : "Veículos e clientes"}
         description={
           isOwner
-            ? "Cadastre veículos por placa. Clientes se registram ao avaliar no perfil público."
-            : "Cadastro operacional de veículos — cliente só se identifica na avaliação"
+            ? "Veículos, clientes (avaliação), peças, serviços e equipe com acesso ao sistema"
+            : "Cadastro operacional de veículos"
         }
       />
       <TabPanel tabs={tabs} activeTab={tab} onTabChange={setTab} />

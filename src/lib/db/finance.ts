@@ -1,16 +1,8 @@
 import { prisma } from "@/lib/db/prisma";
 import type { FinancialEntryKind } from "@prisma/client";
+import type { FinancialEntryRecord } from "@/types/finance";
 
-export interface FinancialEntryRecord {
-  id: string;
-  kind: FinancialEntryKind;
-  name: string;
-  amount: number;
-  dueAt: string | null;
-  paid: boolean;
-  paidAt: string | null;
-  serviceNoteId: string | null;
-}
+export type { FinancialEntryRecord };
 
 export interface FinanceOverview {
   revenueFromNotes: number;
@@ -18,6 +10,8 @@ export interface FinanceOverview {
   commissionsPending: number;
   receivablesOpen: number;
   payablesOpen: number;
+  receivablesPaid: number;
+  payablesPaid: number;
   balance: number;
   entries: FinancialEntryRecord[];
 }
@@ -69,6 +63,8 @@ export async function getFinanceOverview(workshopId: string): Promise<FinanceOve
     commissionsPending,
     receivablesOpen,
     payablesOpen,
+    receivablesPaid: paidReceivables,
+    payablesPaid: paidPayables,
     balance: paidReceivables - paidPayables - commissionsPaid,
     entries: mapped,
   };

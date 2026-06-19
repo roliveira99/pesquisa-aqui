@@ -9,6 +9,9 @@ export interface StockItemRecord {
   quantity: number;
   minQuantity: number;
   unitPrice: number | null;
+  costPrice: number | null;
+  salePrice: number | null;
+  markupPercent: number | null;
   publicVisible: boolean;
 }
 
@@ -29,6 +32,9 @@ export async function listStockItems(workshopId: string): Promise<StockItemRecor
       quantity: s.quantity,
       minQuantity: s.minQuantity,
       unitPrice: s.unitPrice,
+      costPrice: s.costPrice,
+      salePrice: s.salePrice ?? s.unitPrice,
+      markupPercent: s.markupPercent,
       publicVisible: cat?.publicVisible ?? false,
     };
   });
@@ -43,12 +49,18 @@ export async function upsertStockItem(
     quantity: number;
     minQuantity?: number;
     unitPrice?: number;
+    costPrice?: number;
+    salePrice?: number;
+    markupPercent?: number;
     publicVisible?: boolean;
     kind?: "servico" | "peca";
   }
 ): Promise<StockItemRecord> {
   const name = input.name.trim();
   if (!name) throw new Error("Informe o nome da peça.");
+
+  const salePrice = input.salePrice ?? input.unitPrice ?? null;
+  const unitPrice = salePrice;
 
   if (input.id) {
     const existing = await prisma.stockItem.findFirst({ where: { id: input.id, workshopId } });
@@ -61,14 +73,23 @@ export async function upsertStockItem(
         sku: input.sku?.trim() || null,
         quantity: input.quantity,
         minQuantity: input.minQuantity ?? existing.minQuantity,
-        unitPrice: input.unitPrice ?? existing.unitPrice,
+        unitPrice,
+        costPrice: input.costPrice ?? existing.costPrice,
+        salePrice,
+        markupPercent: input.markupPercent ?? existing.markupPercent,
       },
     });
 
-    if (existing.catalogItemId && input.publicVisible !== undefined) {
+    if (existing.catalogItemId) {
       await prisma.catalogItem.update({
         where: { id: existing.catalogItemId },
-        data: { publicVisible: input.publicVisible },
+        data: {
+          name,
+          unitPrice: unitPrice ?? 0,
+          costPrice: input.costPrice ?? undefined,
+          markupPercent: input.markupPercent ?? undefined,
+          ...(input.publicVisible !== undefined ? { publicVisible: input.publicVisible } : {}),
+        },
       });
     }
 
@@ -81,6 +102,9 @@ export async function upsertStockItem(
       quantity: row.quantity,
       minQuantity: row.minQuantity,
       unitPrice: row.unitPrice,
+      costPrice: row.costPrice,
+      salePrice: row.salePrice ?? row.unitPrice,
+      markupPercent: row.markupPercent,
       publicVisible: input.publicVisible ?? false,
     };
   }
@@ -90,7 +114,9 @@ export async function upsertStockItem(
       workshopId,
       kind: input.kind ?? "peca",
       name,
-      unitPrice: input.unitPrice ?? 0,
+      unitPrice: unitPrice ?? 0,
+      costPrice: input.costPrice ?? null,
+      markupPercent: input.markupPercent ?? null,
       publicVisible: input.publicVisible ?? false,
       active: true,
     },
@@ -104,7 +130,10 @@ export async function upsertStockItem(
       sku: input.sku?.trim() || null,
       quantity: input.quantity,
       minQuantity: input.minQuantity ?? 0,
-      unitPrice: input.unitPrice ?? null,
+      unitPrice,
+      costPrice: input.costPrice ?? null,
+      salePrice,
+      markupPercent: input.markupPercent ?? null,
     },
   });
 
@@ -117,6 +146,9 @@ export async function upsertStockItem(
     quantity: row.quantity,
     minQuantity: row.minQuantity,
     unitPrice: row.unitPrice,
+    costPrice: row.costPrice,
+    salePrice: row.salePrice ?? row.unitPrice,
+    markupPercent: row.markupPercent,
     publicVisible: input.publicVisible ?? false,
   };
 }

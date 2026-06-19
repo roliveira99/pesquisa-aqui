@@ -11,9 +11,10 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("q") ?? undefined;
+  const kind = searchParams.get("kind") as CatalogItemKind | null;
   const publicOnly = searchParams.get("public") === "1";
 
-  const items = await listCatalogItems(user.workshopId, { search, publicOnly });
+  const items = await listCatalogItems(user.workshopId, { search, publicOnly, kind: kind ?? undefined });
   return NextResponse.json({ items });
 }
 

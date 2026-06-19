@@ -28,11 +28,12 @@ function mapRow(row: {
 
 export async function listCatalogItems(
   workshopId: string,
-  opts?: { publicOnly?: boolean; includeInactive?: boolean; search?: string }
+  opts?: { publicOnly?: boolean; includeInactive?: boolean; search?: string; kind?: CatalogItemKind }
 ): Promise<CatalogItemRecord[]> {
   const rows = await prisma.catalogItem.findMany({
     where: {
       workshopId,
+      ...(opts?.kind ? { kind: opts.kind } : {}),
       ...(opts?.publicOnly ? { publicVisible: true } : {}),
       ...(opts?.includeInactive ? {} : { active: true }),
       ...(opts?.search

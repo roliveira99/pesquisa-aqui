@@ -118,6 +118,21 @@ export default function AdminOficinasPage() {
     await refresh();
   }
 
+  async function toggleBlock(id: string, blocked: boolean) {
+    const res = await fetch("/api/admin/workshops", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ workshopId: id, blocked }),
+    });
+    if (!res.ok) {
+      const data = (await res.json()) as { error?: string };
+      setError(data.error ?? "Erro ao atualizar bloqueio.");
+      return;
+    }
+    setMessage(blocked ? "Oficina bloqueada." : "Oficina desbloqueada.");
+    await refresh();
+  }
+
   return (
     <PermissionGuard permissions={["admin.visualizar_oficinas", "admin.aprovar_oficinas"]}>
       <PageHeader
@@ -182,15 +197,27 @@ export default function AdminOficinasPage() {
         <p className="text-sm text-muted">Nenhuma oficina cadastrada. Use o botão acima para adicionar a primeira.</p>
       ) : (
         <DataTable
-          headers={["Oficina", "Tipo", "Cidade", "Perfil público", "Ações"]}
+          headers={["Oficina", "Tipo", "Cidade", "Status", "Perfil público", "Ações"]}
           rows={workshops.map((w) => [
             w.name,
             <WorkshopTypeBadge key={`t-${w.id}`} type={w.type} variant="system" />,
             `${w.city}/${w.state}`,
+            w.blocked ? (
+              <span key={`b-${w.id}`} className="text-danger text-xs font-medium">Bloqueada</span>
+            ) : (
+              <span key={`ok-${w.id}`} className="dash-badge">Ativa</span>
+            ),
             <Link key={`l-${w.id}`} href={`/oficinas/${w.slug}`} className="dash-link" target="_blank">
               /oficinas/{w.slug}
             </Link>,
-            <ActionButton key={`d-${w.id}`} label="Remover" variant="danger" onClick={() => void handleDelete(w.id, w.name)} />,
+            <div key={`act-${w.id}`} className="flex flex-wrap gap-1">
+              <ActionButton
+                label={w.blocked ? "Desbloquear" : "Bloquear"}
+                variant={w.blocked ? "success" : "secondary"}
+                onClick={() => void toggleBlock(w.id, !w.blocked)}
+              />
+              <ActionButton label="Remover" variant="danger" onClick={() => void handleDelete(w.id, w.name)} />
+            </div>,
           ])}
         />
       )}

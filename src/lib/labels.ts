@@ -29,3 +29,19 @@ export const orderStatusColors = {
   concluido: "dash-badge",
   cancelado: "dash-badge opacity-60",
 } as const;
+
+export const budgetStatusLabels = {
+  rascunho: "Rascunho",
+  aguardando_aprovacao: "Aguardando cliente",
+  aprovado: "Aprovado",
+  rejeitado: "Rejeitado",
+  convertido: "Convertido em nota",
+} as const;
+
+export const budgetStatusColors = {
+  rascunho: "dash-badge opacity-60",
+  aguardando_aprovacao: "dash-badge font-medium text-foreground",
+  aprovado: "dash-badge",
+  rejeitado: "dash-badge opacity-60",
+  convertido: "dash-badge",
+} as const;

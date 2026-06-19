@@ -2,20 +2,9 @@
 
 import Link from "next/link";
 import { DashboardMetricPanel } from "@/components/dashboard/DashboardMetricPanel";
-import { FeatureList, PageHeader } from "@/components/dashboard/DashboardUI";
+import { PageHeader } from "@/components/dashboard/DashboardUI";
 import { Icon } from "@/components/ui/Icon";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { roleRestrictions } from "@/lib/permissions";
-
-const gerenciaFeatures = [
-  "Dashboard operacional",
-  "Aprovação e alteração de orçamentos",
-  "Cadastro de veículos",
-  "Controle de estoque (entrada e saída)",
-  "Emissão de notas, PDF e WhatsApp",
-  "Relatórios operacionais",
-  "Controle de agenda e serviços",
-];
 
 const quickLinks = [
   { href: "/dashboard/orcamentos", label: "Orçamentos", desc: "Aprovar e alterar", icon: "file" as const },
@@ -65,8 +54,6 @@ export function ManagerHome() {
           </Link>
         ))}
       </div>
-
-      <FeatureList allowed={gerenciaFeatures} restricted={roleRestrictions.gerencia} />
     </div>
   );
 }

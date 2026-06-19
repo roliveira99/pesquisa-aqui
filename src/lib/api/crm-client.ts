@@ -51,7 +51,7 @@ export async function apiLinkVehicle(vehicleId: string, clientId: string) {
   >;
 }
 
-export async function apiAddVehicle(input: { plate: string; model: string; clientId?: string }) {
+export async function apiAddVehicle(input: { plate: string; model: string; year?: string; clientId?: string }) {
   return crmPost({ action: "add-vehicle", ...input }) as Promise<
     { ok: true; vehicle: WorkshopVehicle } | { ok: false; error: string }
   >;

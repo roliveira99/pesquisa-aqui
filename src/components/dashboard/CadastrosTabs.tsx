@@ -3,17 +3,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { ActionButton, DataTable } from "@/components/dashboard/DashboardUI";
 import { formatCpf } from "@/lib/cpf";
-import { apiAddVehicle, apiLinkVehicle, apiUnlinkVehicle, fetchCrm } from "@/lib/api/crm-client";
+import { apiAddVehicle, fetchCrm } from "@/lib/api/crm-client";
 import type { WorkshopClient, WorkshopVehicle } from "@/types/client";
 
 export function ClientesTab({ workshopId }: { workshopId: string }) {
   const [clients, setClients] = useState<WorkshopClient[]>([]);
-  const [vehicles, setVehicles] = useState<WorkshopVehicle[]>([]);
 
   const refresh = useCallback(async () => {
     const data = await fetchCrm();
     setClients(data.clients);
-    setVehicles(data.vehicles);
   }, [workshopId]);
 
   useEffect(() => {
@@ -23,30 +21,25 @@ export function ClientesTab({ workshopId }: { workshopId: string }) {
   return (
     <div>
       <p className="mb-4 text-sm text-muted">
-        Clientes aparecem aqui automaticamente quando se cadastram para avaliar no perfil público
-        (CPF + placa do veículo). Não é necessário cadastrar cliente na operação do dia a dia.
+        Perfil do cliente serve apenas para avaliar a oficina e agendar horário — não fica vinculado a veículos.
+        Clientes aparecem aqui quando se cadastram na avaliação (CPF, nome e data de nascimento).
       </p>
 
       {clients.length === 0 ? (
         <p className="text-sm text-muted">Nenhum cliente registrado via avaliação ainda.</p>
       ) : (
         <DataTable
-          headers={["Nome", "CPF", "Telefone", "Veículos", "Pode avaliar", "Ações"]}
+          headers={["Nome", "CPF", "Telefone", "Avaliou no app", "Serviços concluídos"]}
           rows={clients.map((c) => [
             c.name,
             formatCpf(c.cpf),
             c.phone || "—",
-            vehicles.filter((v) => v.clientId === c.id).length,
             c.completedServices.length > 0 ? (
-              <span key={`rev-${c.id}`} className="dash-badge">
-                Sim ({c.completedServices.length} serviço{c.completedServices.length > 1 ? "s" : ""})
-              </span>
+              <span key={`rev-${c.id}`} className="dash-badge">Sim</span>
             ) : (
-              <span key={`wait-${c.id}`} className="text-xs text-muted">
-                Aguardando serviço concluído
-              </span>
+              <span key={`wait-${c.id}`} className="text-xs text-muted">Aguardando serviço</span>
             ),
-            <ActionButton key={`edit-${c.id}`} label="Editar" />,
+            c.completedServices.length,
           ])}
         />
       )}
@@ -56,18 +49,15 @@ export function ClientesTab({ workshopId }: { workshopId: string }) {
 
 export function VeiculosTab({ workshopId }: { workshopId: string }) {
   const [vehicles, setVehicles] = useState<WorkshopVehicle[]>([]);
-  const [clients, setClients] = useState<WorkshopClient[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [plate, setPlate] = useState("");
   const [model, setModel] = useState("");
+  const [year, setYear] = useState("");
   const [error, setError] = useState("");
-  const [linkingId, setLinkingId] = useState<string | null>(null);
-  const [linkClientId, setLinkClientId] = useState("");
 
   const refresh = useCallback(async () => {
     const data = await fetchCrm();
     setVehicles(data.vehicles);
-    setClients(data.clients);
   }, [workshopId]);
 
   useEffect(() => {
@@ -77,35 +67,15 @@ export function VeiculosTab({ workshopId }: { workshopId: string }) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    const result = await apiAddVehicle({ plate, model });
+    const result = await apiAddVehicle({ plate, model, year: year || undefined });
     if (!result.ok) {
       setError(result.error);
       return;
     }
     setPlate("");
     setModel("");
+    setYear("");
     setShowForm(false);
-    await refresh();
-  }
-
-  async function handleLink(vehicleId: string) {
-    if (!linkClientId) return;
-    const result = await apiLinkVehicle(vehicleId, linkClientId);
-    if (!result.ok) {
-      setError(result.error);
-      return;
-    }
-    setLinkingId(null);
-    setLinkClientId("");
-    await refresh();
-  }
-
-  async function handleUnlink(vehicleId: string) {
-    const result = await apiUnlinkVehicle(vehicleId);
-    if (!result.ok) {
-      setError(result.error);
-      return;
-    }
     await refresh();
   }
 
@@ -113,7 +83,7 @@ export function VeiculosTab({ workshopId }: { workshopId: string }) {
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted">
-          Cadastre apenas placa e modelo. O cliente só se identifica depois, ao avaliar no site público.
+          Cadastre placa, modelo e ano. Consulte o histórico de serviços por veículo.
         </p>
         <ActionButton
           label={showForm ? "Cancelar" : "+ Novo veículo"}
@@ -128,7 +98,7 @@ export function VeiculosTab({ workshopId }: { workshopId: string }) {
       {showForm && (
         <form onSubmit={handleSubmit} className="card mb-6 space-y-4 p-5">
           <h3 className="font-semibold">Cadastrar veículo</h3>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-3">
             <input
               required
               value={plate}
@@ -141,7 +111,13 @@ export function VeiculosTab({ workshopId }: { workshopId: string }) {
               value={model}
               onChange={(e) => setModel(e.target.value)}
               className="input-field"
-              placeholder="Modelo / ano *"
+              placeholder="Modelo *"
+            />
+            <input
+              value={year}
+              onChange={(e) => setYear(e.target.value)}
+              className="input-field"
+              placeholder="Ano"
             />
           </div>
           {error && <p className="text-sm text-danger">{error}</p>}
@@ -152,49 +128,22 @@ export function VeiculosTab({ workshopId }: { workshopId: string }) {
       )}
 
       {vehicles.length === 0 ? (
-        <p className="text-sm text-muted">Nenhum veículo cadastrado. Comece pela placa do carro ou moto.</p>
+        <p className="text-sm text-muted">Nenhum veículo cadastrado.</p>
       ) : (
         <DataTable
-          headers={["Placa", "Modelo", "Serviços p/ avaliar", "Cliente vinculado", "Ações"]}
-          rows={vehicles.map((v) => {
-            const linkedClient = clients.find((c) => c.id === v.clientId);
-            return [
-              v.plate,
-              v.model,
-              (v.completedServices?.length ?? 0) > 0 ? (
-                <span key={`pend-${v.id}`} className="dash-badge">
-                  {v.completedServices!.length} aguardando avaliação
-                </span>
-              ) : (
-                <span key={`none-${v.id}`} className="text-xs text-muted">—</span>
-              ),
-              linkedClient ? linkedClient.name : "Não identificado",
-              <div key={`act-${v.id}`} className="flex flex-wrap gap-2">
-                {v.clientId ? (
-                  <ActionButton label="Desvincular" onClick={() => void handleUnlink(v.id)} />
-                ) : linkingId === v.id ? (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <select
-                      value={linkClientId}
-                      onChange={(e) => setLinkClientId(e.target.value)}
-                      className="input-field text-xs"
-                    >
-                      <option value="">Cliente...</option>
-                      {clients.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                    <ActionButton label="Salvar" onClick={() => void handleLink(v.id)} />
-                    <ActionButton label="Cancelar" variant="secondary" onClick={() => setLinkingId(null)} />
-                  </div>
-                ) : (
-                  <ActionButton label="Vincular cliente" onClick={() => setLinkingId(v.id)} />
-                )}
-              </div>,
-            ];
-          })}
+          headers={["Placa", "Modelo", "Ano", "Histórico (serviços)"]}
+          rows={vehicles.map((v) => [
+            v.plate,
+            v.model,
+            v.year ?? "—",
+            (v.completedServices?.length ?? 0) > 0 ? (
+              <span key={`hist-${v.id}`} className="dash-badge">
+                {v.completedServices!.length} serviço{v.completedServices!.length > 1 ? "s" : ""}
+              </span>
+            ) : (
+              <span key={`none-${v.id}`} className="text-xs text-muted">Sem histórico ainda</span>
+            ),
+          ])}
         />
       )}
     </div>

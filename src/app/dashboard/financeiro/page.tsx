@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ActionButton, DataTable, PageHeader, TabPanel } from "@/components/dashboard/DashboardUI";
 import { DashboardMetricPanel } from "@/components/dashboard/DashboardMetricPanel";
 import { PermissionGuard } from "@/components/dashboard/PermissionGuard";
-import type { FinancialEntryRecord } from "@/lib/db/finance";
+import type { FinancialEntryRecord } from "@/types/finance";
 
 export default function FinanceiroPage() {
   const [tab, setTab] = useState("panorama");
@@ -14,9 +14,12 @@ export default function FinanceiroPage() {
     commissionsPending: number;
     receivablesOpen: number;
     payablesOpen: number;
+    receivablesPaid: number;
+    payablesPaid: number;
     balance: number;
     entries: FinancialEntryRecord[];
   } | null>(null);
+  const [periodFilter, setPeriodFilter] = useState<"day" | "week" | "month" | "all">("month");
   const [form, setForm] = useState({
     kind: "pagar" as "pagar" | "receber",
     name: "",
@@ -59,8 +62,29 @@ export default function FinanceiroPage() {
     await refresh();
   }
 
-  const receber = overview?.entries.filter((e) => e.kind === "receber") ?? [];
-  const pagar = overview?.entries.filter((e) => e.kind === "pagar") ?? [];
+  function inPeriod(dueAt: string | null): boolean {
+    if (periodFilter === "all") return true;
+    if (!dueAt) return false;
+    const d = new Date(dueAt);
+    const now = new Date();
+    if (periodFilter === "day") {
+      return d.toDateString() === now.toDateString();
+    }
+    if (periodFilter === "week") {
+      const start = new Date(now);
+      start.setDate(now.getDate() - now.getDay() + 1);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      end.setHours(23, 59, 59, 999);
+      return d >= start && d <= end;
+    }
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }
+
+  const filteredEntries = overview?.entries.filter((e) => inPeriod(e.dueAt)) ?? [];
+  const receber = filteredEntries.filter((e) => e.kind === "receber");
+  const pagar = filteredEntries.filter((e) => e.kind === "pagar");
 
   const tabs = [
     {
@@ -68,11 +92,13 @@ export default function FinanceiroPage() {
       label: "Panorama",
       content: (
         <div>
-          <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
             <Stat label="Faturamento (notas)" value={`R$ ${(overview?.revenueFromNotes ?? 0).toLocaleString("pt-BR")}`} />
             <Stat label="Comissões pagas" value={`R$ ${(overview?.commissionsPaid ?? 0).toLocaleString("pt-BR")}`} />
-            <Stat label="A receber" value={`R$ ${(overview?.receivablesOpen ?? 0).toLocaleString("pt-BR")}`} />
-            <Stat label="A pagar" value={`R$ ${(overview?.payablesOpen ?? 0).toLocaleString("pt-BR")}`} />
+            <Stat label="A receber (aberto)" value={`R$ ${(overview?.receivablesOpen ?? 0).toLocaleString("pt-BR")}`} />
+            <Stat label="A pagar (aberto)" value={`R$ ${(overview?.payablesOpen ?? 0).toLocaleString("pt-BR")}`} />
+            <Stat label="Recebido (pago)" value={`R$ ${(overview?.receivablesPaid ?? 0).toLocaleString("pt-BR")}`} />
+            <Stat label="Pago" value={`R$ ${(overview?.payablesPaid ?? 0).toLocaleString("pt-BR")}`} />
           </div>
           <div className="mb-6 grid gap-4 lg:grid-cols-2">
             <DashboardMetricPanel
@@ -92,7 +118,9 @@ export default function FinanceiroPage() {
       id: "pagar",
       label: "Contas a pagar",
       content: (
-        <DataTable
+        <div>
+          <PeriodFilter value={periodFilter} onChange={setPeriodFilter} />
+          <DataTable
           headers={["Nome", "Valor", "Vencimento", "Status", "Ações"]}
           rows={pagar.map((e) => [
             e.name,
@@ -106,13 +134,16 @@ export default function FinanceiroPage() {
             ),
           ])}
         />
+        </div>
       ),
     },
     {
       id: "receber",
       label: "Contas a receber",
       content: (
-        <DataTable
+        <div>
+          <PeriodFilter value={periodFilter} onChange={setPeriodFilter} />
+          <DataTable
           headers={["Nome", "Valor", "Vencimento", "Status", "Ações"]}
           rows={receber.map((e) => [
             e.name,
@@ -126,6 +157,7 @@ export default function FinanceiroPage() {
             ),
           ])}
         />
+        </div>
       ),
     },
     {
@@ -186,6 +218,36 @@ function Stat({ label, value }: { label: string; value: string }) {
     <div className="dash-stat">
       <p className="text-lg font-semibold tabular-nums">{value}</p>
       <p className="text-xs uppercase tracking-wide text-muted">{label}</p>
+    </div>
+  );
+}
+
+function PeriodFilter({
+  value,
+  onChange,
+}: {
+  value: "day" | "week" | "month" | "all";
+  onChange: (v: "day" | "week" | "month" | "all") => void;
+}) {
+  return (
+    <div className="mb-4 flex flex-wrap gap-2">
+      {(
+        [
+          ["day", "Dia"],
+          ["week", "Semana"],
+          ["month", "Mês"],
+          ["all", "Todos"],
+        ] as const
+      ).map(([id, label]) => (
+        <button
+          key={id}
+          type="button"
+          onClick={() => onChange(id)}
+          className={`rounded-lg px-3 py-1.5 text-sm ${value === id ? "bg-accent text-accent-fg" : "border border-border"}`}
+        >
+          {label}
+        </button>
+      ))}
     </div>
   );
 }

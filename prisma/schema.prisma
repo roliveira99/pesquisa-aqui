@@ -110,6 +110,7 @@ model Workshop {
   paymentMethods  Json
   catalog         Json
   mechanicRanking Json?
+  blocked         Boolean          @default(false)
   users           User[]
   reviews         Review[]
   agendaRequests  AgendaRequest[]
@@ -178,6 +179,7 @@ model CrmVehicle {
   client            CrmClient? @relation(fields: [clientId], references: [id], onDelete: SetNull)
   plate             String
   model             String
+  year              String?
   completedServices Json      @default("[]")
 
   @@unique([workshopId, plate])
@@ -308,6 +310,8 @@ model CatalogItem {
   name          String
   description   String?
   unitPrice     Float
+  costPrice     Float?
+  markupPercent Float?
   publicVisible Boolean         @default(true)
   active        Boolean         @default(true)
   stockItem     StockItem?
@@ -329,6 +333,9 @@ model StockItem {
   quantity      Float        @default(0)
   minQuantity   Float        @default(0)
   unitPrice     Float?
+  costPrice     Float?
+  salePrice     Float?
+  markupPercent Float?
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
@@ -352,6 +359,7 @@ model WorkshopBudget {
   mechanicName   String?
   createdById    String?
   approvedAt     DateTime?
+  sentAt         DateTime?
   serviceNoteId  String?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
@@ -438,6 +446,9 @@ model FinancialEntry {
   kind              FinancialEntryKind
   name              String
   amount            Float
+  installments      Json?
+  isRecurring       Boolean            @default(false)
+  recurringActive   Boolean            @default(true)
   dueAt             DateTime?
   paid              Boolean            @default(false)
   paidAt            DateTime?

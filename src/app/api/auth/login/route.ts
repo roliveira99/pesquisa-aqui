@@ -19,14 +19,25 @@ import {
 
 const isProduction = process.env.NODE_ENV === "production";
 
-async function loginWithDatabase(email: string, password: string) {
+async function loginWithDatabase(
+  email: string,
+  password: string
+): Promise<
+  | { status: "ok"; response: NextResponse }
+  | { status: "invalid" }
+  | { status: "blocked" }
+> {
   const dbUser = await prisma.user.findUnique({
     where: { email },
-    include: { workshop: { select: { name: true } } },
+    include: { workshop: { select: { name: true, blocked: true } } },
   });
 
   if (!dbUser || !(await bcrypt.compare(password, dbUser.passwordHash))) {
-    return null;
+    return { status: "invalid" };
+  }
+
+  if (dbUser.role !== "master" && dbUser.workshop?.blocked) {
+    return { status: "blocked" };
   }
 
   const user = toAuthUser(dbUser, dbUser.workshop?.name ?? null);
@@ -34,7 +45,7 @@ async function loginWithDatabase(email: string, password: string) {
   const expiresAt = newSessionExpiry();
   const response = NextResponse.json({ user });
   response.cookies.set(SESSION_COOKIE, token, sessionCookieOptions(expiresAt));
-  return response;
+  return { status: "ok", response };
 }
 
 export async function POST(request: Request) {
@@ -78,15 +89,18 @@ export async function POST(request: Request) {
   }
 
   try {
-    const response = await withDatabaseRetry(async () => {
-      const result = await loginWithDatabase(email, password);
-      if (!result) {
-        return NextResponse.json({ error: "E-mail ou senha incorretos." }, { status: 401 });
-      }
-      return result;
-    });
+    const loginResult = await withDatabaseRetry(async () => loginWithDatabase(email, password));
 
-    return response;
+    if (loginResult.status === "invalid") {
+      return NextResponse.json({ error: "E-mail ou senha incorretos." }, { status: 401 });
+    }
+    if (loginResult.status === "blocked") {
+      return NextResponse.json(
+        { error: "Acesso suspenso. Entre em contato com o suporte MP Oficinas." },
+        { status: 403 }
+      );
+    }
+    return loginResult.response;
   } catch (err) {
     console.error("[auth/login] database error:", err);
 

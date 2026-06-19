@@ -211,6 +211,40 @@ export async function createServiceNote(
   return { ok: true, note: mapNote(note) };
 }
 
+export async function createServiceNoteFromBudget(
+  workshopId: string,
+  budgetId: string
+): Promise<{ ok: true; note: ServiceNoteRecord } | { ok: false; error: string }> {
+  const budget = await prisma.workshopBudget.findFirst({ where: { id: budgetId, workshopId } });
+  if (!budget) return { ok: false, error: "Orçamento não encontrado." };
+  if (budget.status !== "aprovado") {
+    return { ok: false, error: "Só orçamentos aprovados podem virar nota de serviço." };
+  }
+  if (budget.serviceNoteId) return { ok: false, error: "Este orçamento já foi convertido em nota." };
+  if (!budget.mechanicId || !budget.mechanicKind) {
+    return { ok: false, error: "Orçamento sem mecânico responsável." };
+  }
+
+  const lineItems = budget.lineItems as unknown as DocumentLineItem[];
+  const result = await createServiceNote(workshopId, {
+    vehicleId: budget.vehicleId,
+    lineItems,
+    paymentMethods: (budget.paymentMethods as string[]) ?? [],
+    mechanicId: budget.mechanicId,
+    mechanicKind: budget.mechanicKind,
+    mechanicName: budget.mechanicName ?? "—",
+    orderId: budgetId,
+  });
+
+  if (result.ok) {
+    await prisma.workshopBudget.update({
+      where: { id: budgetId },
+      data: { status: "convertido", serviceNoteId: result.note.id },
+    });
+  }
+  return result;
+}
+
 export async function createServiceNoteFromOrder(
   workshopId: string,
   orderId: string,

@@ -1,124 +1,74 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ActionButton, DataTable } from "@/components/dashboard/DashboardUI";
-import { PageHeader } from "@/components/dashboard/DashboardUI";
-import { MechanicKindBadge } from "@/components/dashboard/MechanicAssigneeSelect";
+import { ActionButton, DataTable, PageHeader } from "@/components/dashboard/DashboardUI";
 import { PermissionGuard } from "@/components/dashboard/PermissionGuard";
-import { useAuth } from "@/components/auth/AuthProvider";
-import { formatCpf } from "@/lib/cpf";
-import { orderStatusColors, orderStatusLabels } from "@/lib/labels";
-import {
-  apiAssignMechanic,
-  apiCompleteOrder,
-  fetchCrm,
-} from "@/lib/api/crm-client";
-import type { MechanicAssignee, MechanicKind, WorkshopServiceOrder } from "@/types/client";
+import type { CatalogItemRecord } from "@/types/document-line";
 
-export default function ServicosPage() {
-  const { user } = useAuth();
-  const [orders, setOrders] = useState<WorkshopServiceOrder[]>([]);
-  const [assignees, setAssignees] = useState<MechanicAssignee[]>([]);
-  const [message, setMessage] = useState("");
+export default function ServicosOperacionaisPage() {
+  const [items, setItems] = useState<CatalogItemRecord[]>([]);
+  const [name, setName] = useState("");
+  const [price, setPrice] = useState("");
+  const [showForm, setShowForm] = useState(false);
 
   const refresh = useCallback(async () => {
-    const data = await fetchCrm();
-    setOrders(data.orders);
-    setAssignees(data.assignees);
+    const res = await fetch("/api/catalog-items?kind=servico");
+    if (res.ok) {
+      const data = (await res.json()) as { items: CatalogItemRecord[] };
+      setItems(data.items.filter((i) => i.kind === "servico"));
+    }
   }, []);
 
   useEffect(() => {
     void refresh();
-  }, [refresh, user?.workshopId]);
+  }, [refresh]);
 
-  async function handleComplete(orderId: string) {
-    const result = await apiCompleteOrder(orderId);
-    if (!result.ok) {
-      setMessage(result.error);
-      return;
-    }
-    setMessage(
-      `Serviço concluído — creditado a ${result.order.mechanicName}. Cliente (CPF ${formatCpf(result.order.clientCpf)}) pode avaliar no perfil.`
-    );
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    await fetch("/api/catalog-items", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        kind: "servico",
+        name,
+        unitPrice: Number(price),
+        publicVisible: false,
+      }),
+    });
+    setName("");
+    setPrice("");
+    setShowForm(false);
     await refresh();
   }
 
-  async function handleReassign(orderId: string, mechanicId: string, kind: MechanicKind) {
-    const result = await apiAssignMechanic(orderId, mechanicId, kind);
-    if (result.ok) {
-      setMessage(`Serviço reatribuído para ${result.order.mechanicName}.`);
-      await refresh();
-    }
-  }
-
   return (
-    <PermissionGuard permissions={["gerencia.controle_servicos"]}>
+    <PermissionGuard permissions={["owner.cadastro_servicos", "gerencia.controle_servicos"]}>
       <PageHeader
-        title="Controle de serviços"
-        description="Conclua OS e reatribua entre mecânicos com login ou perfis fictícios"
+        title="Serviços"
+        description="Cadastre mão de obra, garantias e outros serviços avulsos para orçamentos e notas"
         actions={
-          <>
-            <ActionButton label="Emitir nota" variant="primary" />
-            <ActionButton label="PDF" />
-            <ActionButton label="WhatsApp" />
-          </>
+          <ActionButton
+            label={showForm ? "Fechar" : "+ Novo serviço"}
+            variant="primary"
+            onClick={() => setShowForm(!showForm)}
+          />
         }
       />
 
-      {message && (
-        <p className="mb-4 rounded-lg border border-border bg-surface-hover px-4 py-3 text-sm text-muted-foreground">
-          {message}
-        </p>
+      {showForm && (
+        <form onSubmit={handleSubmit} className="card mb-6 grid gap-3 p-5 sm:grid-cols-3">
+          <input required value={name} onChange={(e) => setName(e.target.value)} className="input-field sm:col-span-2" placeholder="Ex.: Mão de obra, Garantia estendida" />
+          <input required type="number" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} className="input-field" placeholder="Valor (R$)" />
+          <button type="submit" className="btn btn-primary sm:col-span-3">Salvar serviço</button>
+        </form>
       )}
 
       <DataTable
-        headers={["OS", "Cliente", "Responsável", "Veículo", "Serviço", "Status", "Ações"]}
-        rows={orders.map((s) => [
-          s.id,
-          s.clientName,
-          <span key={`m-${s.id}`} className="inline-flex flex-wrap items-center gap-2">
-            {s.mechanicName ?? "—"}
-            <MechanicKindBadge kind={s.mechanicKind} />
-          </span>,
-          s.vehicle,
-          s.service,
-          <span
-            key={`st-${s.id}`}
-            className={`rounded-full px-2 py-0.5 text-xs font-medium ${orderStatusColors[s.status]}`}
-          >
-            {orderStatusLabels[s.status]}
-          </span>,
-          s.status !== "concluido" ? (
-            <div key={`act-${s.id}`} className="flex flex-wrap gap-2">
-              <ActionButton
-                label="Concluir"
-                variant="success"
-                onClick={() => void handleComplete(s.id)}
-              />
-              <select
-                className="rounded border border-border bg-surface px-2 py-1 text-xs"
-                defaultValue=""
-                onChange={(e) => {
-                  const raw = e.target.value;
-                  if (!raw) return;
-                  const [kind, id] = raw.split(":");
-                  void handleReassign(s.id, id, kind as MechanicKind);
-                  e.target.value = "";
-                }}
-              >
-                <option value="">Reatribuir...</option>
-                {assignees.map((a) => (
-                  <option key={`${a.kind}:${a.id}`} value={`${a.kind}:${a.id}`}>
-                    {a.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : (
-            <span key={`ok-${s.id}`} className="dash-badge text-xs">
-              Concluído
-            </span>
-          ),
+        headers={["Serviço", "Valor", "No catálogo público"]}
+        rows={items.map((i) => [
+          i.name,
+          `R$ ${i.unitPrice.toFixed(2)}`,
+          i.publicVisible ? "Sim" : "Só interno",
         ])}
       />
     </PermissionGuard>

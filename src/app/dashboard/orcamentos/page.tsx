@@ -1,32 +1,34 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
-import { ActionButton, DataTable } from "@/components/dashboard/DashboardUI";
-import { PageHeader } from "@/components/dashboard/DashboardUI";
+import { ActionButton, DataTable, PageHeader } from "@/components/dashboard/DashboardUI";
 import {
   MechanicAssigneeSelect,
   MechanicKindBadge,
 } from "@/components/dashboard/MechanicAssigneeSelect";
 import { PermissionGuard } from "@/components/dashboard/PermissionGuard";
-import { useAuth } from "@/components/auth/AuthProvider";
-import { orderStatusColors, orderStatusLabels } from "@/lib/labels";
-import {
-  apiAssignMechanic,
-  apiCreateOrder,
-  apiUpdateOrderStatus,
-  fetchCrm,
-} from "@/lib/api/crm-client";
 import { DocumentLineBuilder } from "@/components/dashboard/DocumentLineBuilder";
-import type { MechanicAssignee, MechanicKind, WorkshopServiceOrder, WorkshopVehicle } from "@/types/client";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { budgetStatusColors, budgetStatusLabels } from "@/lib/labels";
+import {
+  buildBudgetPrintHtml,
+  buildBudgetShareText,
+  printDocument,
+  shareViaEmail,
+  shareViaWhatsApp,
+} from "@/lib/document-share";
+import { fetchCrm } from "@/lib/api/crm-client";
+import type { BudgetRecord } from "@/types/budget";
+import type { MechanicAssignee, MechanicKind, WorkshopVehicle } from "@/types/client";
 import type { DocumentLineItem } from "@/types/document-line";
 
 export default function OrcamentosPage() {
   const { user } = useAuth();
-  const [orders, setOrders] = useState<WorkshopServiceOrder[]>([]);
+  const [budgets, setBudgets] = useState<BudgetRecord[]>([]);
   const [vehicles, setVehicles] = useState<WorkshopVehicle[]>([]);
-  const [showForm, setShowForm] = useState(false);
   const [assignees, setAssignees] = useState<MechanicAssignee[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [vehicleId, setVehicleId] = useState("");
   const [lineItems, setLineItems] = useState<DocumentLineItem[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
@@ -34,76 +36,126 @@ export default function OrcamentosPage() {
   const [mechanicKind, setMechanicKind] = useState<MechanicKind>("fictional");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const isOwner = user?.role === "dono";
-  const isGerencia = user?.role === "gerencia";
+  const canApprove = user?.role === "dono" || user?.role === "gerencia";
 
   const refresh = useCallback(async () => {
-    const data = await fetchCrm();
-    setOrders(data.orders);
-    setAssignees(data.assignees);
-    setVehicles(data.vehicles);
+    const [budgetRes, crm] = await Promise.all([
+      fetch("/api/budgets"),
+      fetchCrm(),
+    ]);
+    if (budgetRes.ok) {
+      const data = (await budgetRes.json()) as { budgets: BudgetRecord[] };
+      setBudgets(data.budgets.filter((b) => b.status !== "convertido"));
+    }
+    setAssignees(crm.assignees);
+    setVehicles(crm.vehicles);
   }, []);
 
   useEffect(() => {
     void refresh();
   }, [refresh, user?.workshopId]);
 
-  const clientVehicles = vehicles;
-
-  async function approve(id: string) {
-    await apiUpdateOrderStatus(id, "em_andamento");
-    await refresh();
-  }
-
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    setMessage("");
-
-    if (!vehicleId) {
-      setError("Selecione o veículo. Cadastre a placa em Cadastros se necessário.");
-      return;
-    }
-    if (lineItems.length === 0) {
-      setError("Adicione ao menos um serviço ou peça ao orçamento.");
-      return;
-    }
-
-    const total = lineItems.reduce((s, l) => s + l.total, 0);
-    const service = lineItems.map((l) => `${l.name} (${l.quantity}x)`).join("; ");
-
-    const result = await apiCreateOrder({
-      vehicleId,
-      service,
-      value: total,
-      lineItems,
-      paymentMethods,
-      mechanicId,
-      mechanicKind,
-      status: "pendente",
-    });
-
-    if (!result.ok) {
-      setError(result.error);
-      return;
-    }
-
-    const assignee = assignees.find((a) => a.id === mechanicId && a.kind === mechanicKind);
-    setMessage(
-      `Orçamento ${result.order.id} criado e atribuído a ${assignee?.name ?? result.order.mechanicName}. Perfil fictício não acessa o sistema — você gerencia daqui.`
-    );
+  function resetForm() {
+    setEditingId(null);
     setVehicleId("");
     setLineItems([]);
     setPaymentMethods([]);
     setMechanicId("");
     setShowForm(false);
+    setError("");
+  }
+
+  function startEdit(b: BudgetRecord) {
+    setEditingId(b.id);
+    setVehicleId(b.vehicleId);
+    setLineItems(b.lineItems);
+    setPaymentMethods(b.paymentMethods);
+    setMechanicId(b.mechanicId ?? "");
+    setMechanicKind(b.mechanicKind ?? "fictional");
+    setShowForm(true);
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setMessage("");
+
+    if (!vehicleId) {
+      setError("Selecione o veículo.");
+      return;
+    }
+    if (lineItems.length === 0) {
+      setError("Adicione ao menos um serviço ou peça.");
+      return;
+    }
+    if (!mechanicId) {
+      setError("Selecione o mecânico responsável.");
+      return;
+    }
+
+    const assignee = assignees.find((a) => a.id === mechanicId && a.kind === mechanicKind);
+    const payload = {
+      vehicleId,
+      lineItems,
+      paymentMethods,
+      mechanicId,
+      mechanicKind,
+      mechanicName: assignee?.name,
+    };
+
+    const res = await fetch("/api/budgets", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        editingId
+          ? { action: "update", budgetId: editingId, ...payload }
+          : { action: "create", ...payload }
+      ),
+    });
+    const data = (await res.json()) as { ok?: boolean; error?: string; budget?: BudgetRecord };
+    if (!data.ok) {
+      setError(data.error ?? "Erro ao salvar orçamento.");
+      return;
+    }
+
+    setMessage(editingId ? "Orçamento atualizado." : `Orçamento ${data.budget?.id} criado.`);
+    resetForm();
     await refresh();
   }
 
-  async function handleReassign(orderId: string, newMechanicId: string, kind: MechanicKind) {
-    const result = await apiAssignMechanic(orderId, newMechanicId, kind);
-    if (result.ok) await refresh();
+  async function budgetAction(action: string, budgetId: string) {
+    await fetch("/api/budgets", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, budgetId }),
+    });
+    await refresh();
   }
+
+  function sendBudget(b: BudgetRecord, channel: "whatsapp" | "email" | "print") {
+    const text = buildBudgetShareText({
+      id: b.id,
+      workshopName: user?.workshopName ?? "Oficina",
+      vehiclePlate: b.vehiclePlate,
+      vehicleModel: b.vehicleModel,
+      lineItems: b.lineItems,
+      total: b.total,
+    });
+    if (channel === "whatsapp") shareViaWhatsApp(text);
+    else if (channel === "email") shareViaEmail(`Orçamento ${b.id}`, text);
+    else printDocument(`Orçamento ${b.id}`, buildBudgetPrintHtml({
+      id: b.id,
+      workshopName: user?.workshopName ?? "Oficina",
+      vehiclePlate: b.vehiclePlate,
+      vehicleModel: b.vehicleModel,
+      lineItems: b.lineItems,
+      total: b.total,
+    }));
+    void budgetAction("sent", b.id);
+    setMessage("Orçamento marcado como enviado ao cliente.");
+  }
+
+  const visible = budgets;
 
   return (
     <PermissionGuard
@@ -117,38 +169,24 @@ export default function OrcamentosPage() {
     >
       <PageHeader
         title="Orçamentos"
-        description="Gestão interna (mecânico, gerência, dono). Para nota ao cliente com CNPJ, use Notas ao cliente."
+        description="Propostas comerciais — não entram no financeiro até virarem nota de serviço após aprovação do cliente"
         actions={
-          <>
-            <Link
-              href="/dashboard/notas"
-              className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-surface-hover"
-            >
-              Notas ao cliente
-            </Link>
-            <ActionButton
-              label={showForm ? "Fechar formulário" : "+ Novo orçamento"}
-              variant="primary"
-              onClick={() => {
-                setShowForm(!showForm);
-                setError("");
-              }}
-            />
-            <ActionButton label="Nota cliente" onClick={() => window.location.assign("/dashboard/notas")} />
-          </>
+          <ActionButton
+            label={showForm ? "Fechar" : "+ Novo orçamento"}
+            variant="primary"
+            onClick={() => {
+              if (showForm) resetForm();
+              else setShowForm(true);
+            }}
+          />
         }
       />
 
-      {message && (
-        <p className="dash-alert">{message}</p>
-      )}
+      {message && <p className="dash-alert mb-4">{message}</p>}
 
       {showForm && (
-        <form onSubmit={handleCreate} className="card mb-6 space-y-4 p-5">
-          <h3 className="font-semibold">Novo orçamento</h3>
-          <p className="text-sm text-muted">
-            Monte o orçamento com itens do catálogo ou avulsos. Pode ser impresso ou enviado ao cliente após aprovação.
-          </p>
+        <form onSubmit={handleSubmit} className="card mb-6 space-y-4 p-5">
+          <h3 className="font-semibold">{editingId ? "Editar orçamento" : "Novo orçamento"}</h3>
           <div className="grid gap-3 sm:grid-cols-2">
             <select
               required
@@ -157,9 +195,9 @@ export default function OrcamentosPage() {
               className="input-field"
             >
               <option value="">Veículo (placa) *</option>
-              {clientVehicles.map((v) => (
+              {vehicles.map((v) => (
                 <option key={v.id} value={v.id}>
-                  {v.plate} — {v.model}
+                  {v.plate} — {v.model}{v.year ? ` (${v.year})` : ""}
                 </option>
               ))}
             </select>
@@ -181,81 +219,49 @@ export default function OrcamentosPage() {
             onPaymentMethodsChange={setPaymentMethods}
           />
           {error && <p className="text-sm text-danger">{error}</p>}
-          <button type="submit" className="btn btn-primary">
-            Criar orçamento e solicitar aprovação
-          </button>
+          <div className="flex gap-2">
+            <button type="submit" className="btn btn-primary">
+              {editingId ? "Salvar alterações" : "Criar orçamento"}
+            </button>
+            <ActionButton label="Cancelar" variant="secondary" onClick={resetForm} />
+          </div>
         </form>
       )}
 
       <DataTable
-        headers={["OS", "Veículo", "Serviço", "Responsável", "Valor", "Status", "Ações"]}
-        rows={orders.map((o) => [
-          o.id,
-          o.vehiclePlate ? `${o.vehiclePlate} — ${o.vehicle}` : o.vehicle,
-          o.service,
-          <span key={`m-${o.id}`} className="inline-flex flex-wrap items-center gap-2">
-            {o.mechanicName ?? "—"}
-            <MechanicKindBadge kind={o.mechanicKind} />
+        headers={["ID", "Veículo", "Responsável", "Total", "Status", "Enviado", "Ações"]}
+        rows={visible.map((b) => [
+          b.id.slice(-8).toUpperCase(),
+          b.vehiclePlate ? `${b.vehiclePlate} — ${b.vehicleModel ?? ""}` : "—",
+          <span key={`m-${b.id}`} className="inline-flex flex-wrap items-center gap-2">
+            {b.mechanicName ?? "—"}
+            {b.mechanicKind && <MechanicKindBadge kind={b.mechanicKind} />}
           </span>,
-          `R$ ${o.value}`,
-          <span
-            key={o.id}
-            className={`rounded-full px-2 py-0.5 text-xs font-medium ${orderStatusColors[o.status]}`}
-          >
-            {orderStatusLabels[o.status]}
+          `R$ ${b.total.toFixed(2)}`,
+          <span key={`s-${b.id}`} className={`rounded-full px-2 py-0.5 text-xs font-medium ${budgetStatusColors[b.status]}`}>
+            {budgetStatusLabels[b.status]}
           </span>,
-          o.status === "pendente" ? (
-            <div key={`act-${o.id}`} className="flex flex-wrap gap-2">
-              <ActionButton label="Aprovar" variant="success" onClick={() => void approve(o.id)} />
-              {(isOwner || isGerencia) && (
-                <ReassignSelect
-                  orderId={o.id}
-                  assignees={assignees}
-                  onReassign={handleReassign}
-                />
-              )}
-            </div>
-          ) : (
-            <ReassignSelect orderId={o.id} assignees={assignees} onReassign={handleReassign} />
-          ),
+          b.sentAt ? new Date(b.sentAt).toLocaleDateString("pt-BR") : "—",
+          <div key={`a-${b.id}`} className="flex flex-wrap gap-1">
+            {canApprove && b.status === "aguardando_aprovacao" && (
+              <>
+                <ActionButton label="Aceitar" variant="success" onClick={() => void budgetAction("approve", b.id)} />
+                <ActionButton label="Reprovar" onClick={() => void budgetAction("reject", b.id)} />
+              </>
+            )}
+            {b.status !== "convertido" && b.status !== "rejeitado" && (
+              <ActionButton label="Editar" onClick={() => startEdit(b)} />
+            )}
+            <ActionButton label="WhatsApp" onClick={() => sendBudget(b, "whatsapp")} />
+            <ActionButton label="E-mail" onClick={() => sendBudget(b, "email")} />
+            <ActionButton label="Imprimir" onClick={() => sendBudget(b, "print")} />
+          </div>,
         ])}
       />
 
       <p className="mt-6 rounded-lg border border-border bg-surface p-4 text-sm text-muted">
-        Perfis <strong>sem acesso</strong> não entram no sistema. Crie-os em Equipe sem acesso e selecione ao
-        lançar o orçamento — a produtividade aparece no relatório da equipe.
+        Orçamentos aprovados podem ser convertidos em <strong>nota de serviço</strong> na tela Notas de serviço — só então entram no financeiro e na produtividade do mecânico.
       </p>
     </PermissionGuard>
-  );
-}
-
-function ReassignSelect({
-  orderId,
-  assignees,
-  onReassign,
-}: {
-  orderId: string;
-  assignees: MechanicAssignee[];
-  onReassign: (orderId: string, mechanicId: string, kind: MechanicKind) => void | Promise<void>;
-}) {
-  return (
-    <select
-      className="rounded border border-border bg-surface px-2 py-1 text-xs"
-      defaultValue=""
-      onChange={(e) => {
-        const raw = e.target.value;
-        if (!raw) return;
-        const [kind, id] = raw.split(":");
-        void onReassign(orderId, id, kind as MechanicKind);
-        e.target.value = "";
-      }}
-    >
-      <option value="">Reatribuir...</option>
-      {assignees.map((a) => (
-        <option key={`${a.kind}:${a.id}`} value={`${a.kind}:${a.id}`}>
-          {a.name} {a.kind === "fictional" ? "(sem acesso)" : ""}
-        </option>
-      ))}
-    </select>
   );
 }

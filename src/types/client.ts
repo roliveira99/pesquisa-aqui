@@ -16,6 +16,7 @@ export interface WorkshopVehicle {
   clientId?: string | null;
   plate: string;
   model: string;
+  year?: string;
   completedServices?: import("@/types/review").CompletedServiceRecord[];
 }
 

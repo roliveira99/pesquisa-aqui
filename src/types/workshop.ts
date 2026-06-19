@@ -51,6 +51,7 @@ export interface Workshop {
   specialties: string[];
   hasAgenda: boolean;
   paymentMethods: string[];
+  blocked?: boolean;
   catalog: WorkshopCatalog;
   mechanicRanking?: MechanicRankingEntry[];
 }

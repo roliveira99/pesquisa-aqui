@@ -29,6 +29,7 @@ export function mapDbWorkshop(row: DbWorkshop): Workshop {
     hasAgenda: row.hasAgenda,
     paymentMethods: row.paymentMethods as unknown as string[],
     catalog: catalogOverride ?? baseCatalog,
+    blocked: row.blocked ?? false,
     mechanicRanking:
       (row.mechanicRanking as unknown as Workshop["mechanicRanking"]) ?? undefined,
   };
