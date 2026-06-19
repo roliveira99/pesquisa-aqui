@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import {
+  anticipateInstallments,
   createFinancialEntry,
+  finishRecurring,
   getFinanceOverview,
   markFinancialEntryPaid,
+  markInstallmentPaid,
 } from "@/lib/db/finance";
 import { getRequestUser, userHasEffectivePermission, userHasPermission } from "@/lib/db/request-auth";
 import type { FinancialEntryKind } from "@prisma/client";
@@ -40,25 +43,45 @@ export async function POST(request: Request) {
 
   const body = (await request.json()) as Record<string, unknown>;
   const action = body.action as string;
+  const workshopId = user.workshopId;
 
   switch (action) {
     case "create": {
-      const entry = await createFinancialEntry(user.workshopId, {
+      const entry = await createFinancialEntry(workshopId, {
         kind: body.kind as FinancialEntryKind,
         name: body.name as string,
         amount: Number(body.amount),
         dueAt: body.dueAt as string | undefined,
+        installmentCount: body.installmentCount ? Number(body.installmentCount) : undefined,
+        isRecurring: body.isRecurring as boolean | undefined,
         reminderDayBefore: body.reminderDayBefore as boolean | undefined,
         reminderSameDay: body.reminderSameDay as boolean | undefined,
       });
       return NextResponse.json({ ok: true, entry });
     }
     case "mark-paid": {
-      const result = await markFinancialEntryPaid(
-        user.workshopId,
+      const result = await markFinancialEntryPaid(workshopId, body.entryId as string, body.paid as boolean);
+      return NextResponse.json(result);
+    }
+    case "mark-installment": {
+      const result = await markInstallmentPaid(
+        workshopId,
         body.entryId as string,
+        Number(body.installmentNumber),
         body.paid as boolean
       );
+      return NextResponse.json(result);
+    }
+    case "anticipate": {
+      const result = await anticipateInstallments(
+        workshopId,
+        body.entryId as string,
+        body.installmentNumbers as number[]
+      );
+      return NextResponse.json(result);
+    }
+    case "finish-recurring": {
+      const result = await finishRecurring(workshopId, body.entryId as string);
       return NextResponse.json(result);
     }
     default:

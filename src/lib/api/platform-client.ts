@@ -51,6 +51,8 @@ export async function apiAddAnnouncement(input: {
   style: SiteAnnouncement["style"];
   linkUrl?: string;
   linkLabel?: string;
+  mediaUrl?: string;
+  displayType?: SiteAnnouncement["displayType"];
 }): Promise<SiteAnnouncement> {
   const res = await fetch("/api/platform", {
     method: "POST",

@@ -12,7 +12,8 @@ import { ThemeToggle } from "@/components/theme/ThemeToggle";
 const navLinks = [
   { href: "/", label: "Início" },
   { href: "/oficinas", label: "Oficinas" },
-  { href: "/curiosidades", label: "Conteúdo" },
+  { href: "/classificados", label: "Classificados" },
+  { href: "/curiosidades", label: "Notícias" },
 ];
 
 export function Header() {

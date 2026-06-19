@@ -21,6 +21,7 @@ function mapBudget(row: {
   approvedAt: Date | null;
   sentAt: Date | null;
   serviceNoteId: string | null;
+  createdById: string | null;
   createdAt: Date;
 }): BudgetRecord {
   return {
@@ -40,6 +41,7 @@ function mapBudget(row: {
     sentAt: row.sentAt?.toISOString() ?? null,
     serviceNoteId: row.serviceNoteId,
     createdAt: row.createdAt.toISOString(),
+    createdById: row.createdById,
   };
 }
 

@@ -25,6 +25,7 @@ export interface BudgetRecord {
   sentAt: string | null;
   serviceNoteId: string | null;
   createdAt: string;
+  createdById?: string | null;
   vehiclePlate?: string;
   vehicleModel?: string;
   vehicleYear?: string;

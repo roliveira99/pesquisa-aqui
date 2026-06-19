@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { DashboardMetricPanel } from "@/components/dashboard/DashboardMetricPanel";
+import { SubscriptionBanner } from "@/components/dashboard/SubscriptionBanner";
 import { PageHeader } from "@/components/dashboard/DashboardUI";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { orderStatusColors, orderStatusLabels } from "@/lib/labels";
@@ -34,6 +35,8 @@ export function OwnerHome() {
         title="Dashboard da oficina"
         description={`Bem-vindo, ${user?.name} — ${user?.workshopName}`}
       />
+
+      <SubscriptionBanner />
 
       <div className="mb-4 grid gap-4 sm:grid-cols-2">
         <StatCard label="Ordens hoje" value={ordersToday} icon="clipboard" />

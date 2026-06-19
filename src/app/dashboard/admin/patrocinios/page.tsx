@@ -4,24 +4,30 @@ import { useCallback, useEffect, useState } from "react";
 import { ActionButton } from "@/components/dashboard/DashboardUI";
 import { PageHeader } from "@/components/dashboard/DashboardUI";
 import { PermissionGuard } from "@/components/dashboard/PermissionGuard";
+import { fetchAdminWorkshops } from "@/lib/api/admin-client";
 import { apiSetWorkshopSponsorship, fetchPlatformSettings } from "@/lib/api/platform-client";
-import { workshops } from "@/data/workshops";
 import {
   sponsorshipTierLabels,
   type SponsorshipTier,
 } from "@/types/platform-admin";
+import type { Workshop } from "@/types/workshop";
 
 const tiers: SponsorshipTier[] = ["none", "bronze", "prata", "ouro", "diamante"];
 
 export default function AdminPatrociniosPage() {
   const [message, setMessage] = useState("");
+  const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [tierMap, setTierMap] = useState<Record<string, SponsorshipTier>>({});
   const [version, setVersion] = useState(0);
 
   const refresh = useCallback(async () => {
-    const settings = await fetchPlatformSettings();
+    const [data, settings] = await Promise.all([
+      fetchAdminWorkshops(),
+      fetchPlatformSettings(),
+    ]);
+    setWorkshops(data.workshops);
     const map: Record<string, SponsorshipTier> = {};
-    for (const w of workshops) map[w.id] = "none";
+    for (const w of data.workshops) map[w.id] = "none";
     for (const s of settings.sponsorships) map[s.workshopId] = s.tier;
     setTierMap(map);
     setVersion((v) => v + 1);
@@ -45,29 +51,27 @@ export default function AdminPatrociniosPage() {
     <PermissionGuard permissions={["admin.gerenciar_patrocinios"]}>
       <PageHeader
         title="Patrocínios e destaque"
-        description="Oficinas que pagam mais aparecem primeiro na home e no diretório — badge Patrocinado no card"
+        description="Somente oficinas cadastradas no sistema — patrocinadas aparecem primeiro na home"
       />
 
-      {message && (
-        <p className="dash-alert">{message}</p>
+      {message && <p className="dash-alert">{message}</p>}
+
+      {workshops.length === 0 ? (
+        <p className="text-sm text-muted">Nenhuma oficina cadastrada ainda.</p>
+      ) : (
+        <div className="space-y-4">
+          {workshops.map((w) => (
+            <SponsorshipRow
+              key={`${w.id}-${version}`}
+              workshopId={w.id}
+              name={w.name}
+              city={`${w.city}/${w.state}`}
+              initialTier={tierMap[w.id] ?? "none"}
+              onSave={handleSave}
+            />
+          ))}
+        </div>
       )}
-
-      <p className="mb-6 text-sm text-muted">
-        Ordem de exibição: <strong>Diamante</strong> → Ouro → Prata → Bronze → demais (por avaliação).
-      </p>
-
-      <div className="space-y-4">
-        {workshops.map((w) => (
-          <SponsorshipRow
-            key={`${w.id}-${version}`}
-            workshopId={w.id}
-            name={w.name}
-            city={`${w.city}/${w.state}`}
-            initialTier={tierMap[w.id] ?? "none"}
-            onSave={handleSave}
-          />
-        ))}
-      </div>
     </PermissionGuard>
   );
 }
@@ -98,25 +102,12 @@ function SponsorshipRow({
         <p className="font-semibold text-foreground">{name}</p>
         <p className="text-xs text-muted">{city}</p>
       </div>
-      <select
-        value={tier}
-        onChange={(e) => setTier(e.target.value as SponsorshipTier)}
-        className="input-field w-40"
-      >
+      <select value={tier} onChange={(e) => setTier(e.target.value as SponsorshipTier)} className="input-field w-40">
         {tiers.map((t) => (
-          <option key={t} value={t}>
-            {sponsorshipTierLabels[t]}
-          </option>
+          <option key={t} value={t}>{sponsorshipTierLabels[t]}</option>
         ))}
       </select>
-      <input
-        type="number"
-        min={0}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        className="input-field w-32"
-        placeholder="R$/mês"
-      />
+      <input type="number" min={0} value={value} onChange={(e) => setValue(e.target.value)} className="input-field w-32" placeholder="R$/mês" />
       <ActionButton label="Salvar" variant="primary" onClick={() => onSave(workshopId, tier, value)} />
     </div>
   );

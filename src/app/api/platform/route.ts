@@ -19,6 +19,7 @@ import type { AnnouncementPlacement, SponsorshipTier } from "@/types/platform-ad
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const placement = searchParams.get("placement") as AnnouncementPlacement | null;
+  const displayType = searchParams.get("displayType") as "banner" | "modal" | null;
   const scope = searchParams.get("scope");
 
   if (scope === "admin") {
@@ -40,7 +41,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ workshops, tiers });
   }
 
-  const announcements = await getActiveAnnouncements(placement ?? undefined);
+  const announcements = await getActiveAnnouncements(placement ?? undefined, displayType ?? undefined);
   return NextResponse.json({ announcements });
 }
 
@@ -77,6 +78,8 @@ export async function POST(request: Request) {
       style: body.style as "info" | "promo" | "alerta",
       linkUrl: body.linkUrl as string | undefined,
       linkLabel: body.linkLabel as string | undefined,
+      mediaUrl: body.mediaUrl as string | undefined,
+      displayType: body.displayType as "banner" | "modal" | undefined,
     });
     return NextResponse.json({ announcement });
   }

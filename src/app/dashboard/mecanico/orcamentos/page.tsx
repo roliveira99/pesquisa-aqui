@@ -1,93 +1,114 @@
 "use client";
 
-import { useState } from "react";
-import { ActionButton } from "@/components/dashboard/DashboardUI";
-import { PageHeader } from "@/components/dashboard/DashboardUI";
+import { useCallback, useEffect, useState } from "react";
+import { ActionButton, DataTable, PageHeader, TabPanel } from "@/components/dashboard/DashboardUI";
+import { DocumentLineBuilder } from "@/components/dashboard/DocumentLineBuilder";
 import { PermissionGuard } from "@/components/dashboard/PermissionGuard";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { fetchCrm } from "@/lib/api/crm-client";
+import { budgetStatusColors, budgetStatusLabels } from "@/lib/labels";
+import type { BudgetRecord } from "@/types/budget";
+import type { DocumentLineItem } from "@/types/document-line";
+import type { WorkshopVehicle } from "@/types/client";
 
 export default function MecanicoOrcamentosPage() {
-  const [submitted, setSubmitted] = useState(false);
+  const { user } = useAuth();
+  const [budgets, setBudgets] = useState<BudgetRecord[]>([]);
+  const [vehicles, setVehicles] = useState<WorkshopVehicle[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [vehicleId, setVehicleId] = useState("");
+  const [lineItems, setLineItems] = useState<DocumentLineItem[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
+  const [notes, setNotes] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
-  function handleSubmit(e: React.FormEvent) {
+  const refresh = useCallback(async () => {
+    const [budgetRes, crm] = await Promise.all([fetch("/api/budgets"), fetchCrm()]);
+    if (budgetRes.ok) {
+      const data = (await budgetRes.json()) as { budgets: BudgetRecord[] };
+      setBudgets(data.budgets);
+    }
+    setVehicles(crm.vehicles);
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitted(true);
+    setError("");
+    if (!vehicleId || lineItems.length === 0) {
+      setError("Selecione o veículo e adicione itens.");
+      return;
+    }
+
+    const res = await fetch("/api/budgets", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "create",
+        vehicleId,
+        lineItems,
+        paymentMethods,
+        mechanicId: user?.id,
+        mechanicKind: "platform",
+        mechanicName: user?.name,
+        notes,
+      }),
+    });
+    const data = (await res.json()) as { ok?: boolean; error?: string };
+    if (!data.ok) {
+      setError(data.error ?? "Erro ao enviar orçamento.");
+      return;
+    }
+
+    setMessage("Orçamento enviado para aprovação da gerência ou dono.");
+    setShowForm(false);
+    setVehicleId("");
+    setLineItems([]);
+    setNotes("");
+    await refresh();
   }
 
   return (
-    <PermissionGuard permissions={["mecanico.criar_orcamento", "mecanico.solicitar_alteracao"]}>
+    <PermissionGuard permissions={["mecanico.criar_orcamento"]}>
       <PageHeader
-        title="Criar orçamento"
-        description="Monte um orçamento para o cliente — aguardará aprovação da gerência ou dono"
+        title="Meus orçamentos"
+        description="Monte orçamentos para aprovação — não entram no financeiro até virarem nota"
+        actions={
+          <ActionButton label={showForm ? "Fechar" : "+ Novo orçamento"} variant="primary" onClick={() => setShowForm(!showForm)} />
+        }
       />
 
-      {submitted ? (
-        <div className="card p-6 text-center">
-          <p className="text-lg font-semibold text-foreground">Orçamento enviado para aprovação!</p>
-          <p className="mt-2 text-sm text-muted">A gerência será notificada para revisar e aprovar.</p>
-          <ActionButton label="Criar outro" variant="primary" onClick={() => setSubmitted(false)} />
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="max-w-2xl space-y-4 rounded-xl border border-border bg-surface p-6">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-sm font-medium">Cliente</label>
-              <select className="w-full rounded-lg border border-border bg-background px-4 py-2 text-sm" required>
-                <option value="">Selecione...</option>
-                <option>Carlos Mendes</option>
-                <option>Ana Paula R.</option>
-                <option>Roberto Lima</option>
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium">Veículo</label>
-              <select className="w-full rounded-lg border border-border bg-background px-4 py-2 text-sm" required>
-                <option value="">Selecione...</option>
-                <option>Honda Civic 2020</option>
-                <option>Toyota Corolla 2019</option>
-              </select>
-            </div>
-          </div>
+      {message && <p className="dash-alert mb-4">{message}</p>}
 
-          <div>
-            <label className="mb-1 block text-sm font-medium">Serviços</label>
-            <textarea
-              className="w-full rounded-lg border border-border bg-background px-4 py-2 text-sm"
-              rows={3}
-              placeholder="Descreva os serviços necessários..."
-              required
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium">Peças utilizadas</label>
-            <textarea
-              className="w-full rounded-lg border border-border bg-background px-4 py-2 text-sm"
-              rows={2}
-              placeholder="Liste as peças (consulta apenas — alteração de estoque não permitida)"
-            />
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-sm font-medium">Valor estimado (R$)</label>
-              <input type="number" className="w-full rounded-lg border border-border bg-background px-4 py-2 text-sm" placeholder="0,00" required />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium">Fotos do veículo</label>
-              <input type="file" accept="image/*" multiple className="w-full text-sm text-muted" />
-            </div>
-          </div>
-
-          <div className="flex gap-2 pt-2">
-            <ActionButton label="Enviar para aprovação" variant="primary" />
-            <ActionButton label="Solicitar alteração" />
-          </div>
-
-          <p className="text-xs text-muted">
-            ❌ Você não pode aprovar orçamentos, alterar estoque ou valores de tabela.
-          </p>
+      {showForm && (
+        <form onSubmit={handleSubmit} className="card mb-6 space-y-4 p-5">
+          <select required value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} className="input-field max-w-md">
+            <option value="">Veículo (placa) *</option>
+            {vehicles.map((v) => (
+              <option key={v.id} value={v.id}>{v.plate} — {v.model}</option>
+            ))}
+          </select>
+          <DocumentLineBuilder lineItems={lineItems} onChange={setLineItems} paymentMethods={paymentMethods} onPaymentMethodsChange={setPaymentMethods} />
+          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="input-field min-h-[60px]" placeholder="Observações para a gerência (opcional)" />
+          {error && <p className="text-sm text-danger">{error}</p>}
+          <button type="submit" className="btn btn-primary">Enviar para aprovação</button>
         </form>
       )}
+
+      <DataTable
+        headers={["ID", "Veículo", "Total", "Status", "Data"]}
+        rows={budgets.map((b) => [
+          b.id.slice(-8).toUpperCase(),
+          b.vehiclePlate ?? "—",
+          `R$ ${b.total.toFixed(2)}`,
+          <span key={b.id} className={`rounded-full px-2 py-0.5 text-xs ${budgetStatusColors[b.status]}`}>{budgetStatusLabels[b.status]}</span>,
+          new Date(b.createdAt).toLocaleDateString("pt-BR"),
+        ])}
+      />
     </PermissionGuard>
   );
 }

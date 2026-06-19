@@ -4,6 +4,7 @@ import { AuthProvider } from "@/components/auth/AuthProvider";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { GlobalSiteBanner } from "@/components/site/GlobalSiteBanner";
+import { SitePopup } from "@/components/site/SitePopup";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { ThemeScript } from "@/components/theme/ThemeScript";
 import "./globals.css";
@@ -44,6 +45,7 @@ export default function RootLayout({
           <AuthProvider>
             <Header />
             <GlobalSiteBanner />
+            <SitePopup />
             <main className="flex-1">{children}</main>
             <Footer />
           </AuthProvider>

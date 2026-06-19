@@ -17,10 +17,15 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const status = searchParams.get("status");
-  const budgets = await listBudgets(
+  let budgets = await listBudgets(
     user.workshopId,
     status ? (status.split(",") as import("@prisma/client").BudgetStatus[]) : undefined
   );
+  if (user.role === "mecanico") {
+    budgets = budgets.filter(
+      (b) => b.createdById === user.id || (b.mechanicId === user.id && b.mechanicKind === "platform")
+    );
+  }
   return NextResponse.json({ budgets });
 }
 

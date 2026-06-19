@@ -17,14 +17,18 @@ export type AnnouncementPlacement =
 
 export type AnnouncementStyle = "info" | "promo" | "alerta";
 
+export type AnnouncementDisplayType = "banner" | "modal";
+
 export interface SiteAnnouncement {
   id: string;
   title: string;
   message: string;
   linkUrl?: string;
   linkLabel?: string;
+  mediaUrl?: string;
   placement: AnnouncementPlacement;
   style: AnnouncementStyle;
+  displayType?: AnnouncementDisplayType;
   active: boolean;
   createdAt: string;
 }

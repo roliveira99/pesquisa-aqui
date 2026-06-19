@@ -33,6 +33,7 @@ const defaultSettings: PlatformAdminSettings = {
       message: "Compare perfis, avaliações e catálogos — sem criar conta para entrar em contato.",
       placement: "site_geral",
       style: "info",
+      displayType: "banner",
       active: true,
       createdAt: "2026-06-10T10:00:00.000Z",
     },
@@ -62,8 +63,10 @@ function mapAnnouncement(row: {
   message: string;
   linkUrl: string | null;
   linkLabel: string | null;
+  mediaUrl?: string | null;
   placement: string;
   style: string;
+  displayType?: string;
   active: boolean;
   createdAt: Date;
 }): SiteAnnouncement {
@@ -73,8 +76,10 @@ function mapAnnouncement(row: {
     message: row.message,
     linkUrl: row.linkUrl ?? undefined,
     linkLabel: row.linkLabel ?? undefined,
+    mediaUrl: row.mediaUrl ?? undefined,
     placement: row.placement as AnnouncementPlacement,
     style: row.style as SiteAnnouncement["style"],
+    displayType: (row.displayType as SiteAnnouncement["displayType"]) ?? "banner",
     active: row.active,
     createdAt: row.createdAt.toISOString(),
   };
@@ -157,10 +162,12 @@ export async function sortWorkshopsBySponsorship<T extends Workshop>(
 }
 
 export async function getActiveAnnouncements(
-  placement?: AnnouncementPlacement
+  placement?: AnnouncementPlacement,
+  displayType?: "banner" | "modal"
 ): Promise<SiteAnnouncement[]> {
   const settings = await getPlatformSettings();
-  const list = settings.announcements.filter((a) => a.active);
+  let list = settings.announcements.filter((a) => a.active);
+  if (displayType) list = list.filter((a) => (a.displayType ?? "banner") === displayType);
   if (!placement) return list;
   return list.filter((a) => a.placement === placement || a.placement === "site_geral");
 }
@@ -177,6 +184,8 @@ export async function addAnnouncement(input: {
   style: SiteAnnouncement["style"];
   linkUrl?: string;
   linkLabel?: string;
+  mediaUrl?: string;
+  displayType?: SiteAnnouncement["displayType"];
 }): Promise<SiteAnnouncement> {
   const announcement: SiteAnnouncement = {
     id: `ann-${Date.now()}`,
@@ -186,6 +195,8 @@ export async function addAnnouncement(input: {
     style: input.style,
     linkUrl: input.linkUrl?.trim() || undefined,
     linkLabel: input.linkLabel?.trim() || undefined,
+    mediaUrl: input.mediaUrl?.trim() || undefined,
+    displayType: input.displayType ?? "banner",
     active: true,
     createdAt: new Date().toISOString(),
   };
@@ -200,6 +211,8 @@ export async function addAnnouncement(input: {
         style: announcement.style,
         linkUrl: announcement.linkUrl ?? null,
         linkLabel: announcement.linkLabel ?? null,
+        mediaUrl: announcement.mediaUrl ?? null,
+        displayType: announcement.displayType,
         active: true,
         createdAt: new Date(announcement.createdAt),
       },

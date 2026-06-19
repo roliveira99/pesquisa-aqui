@@ -11,12 +11,26 @@ import { ButtonLink } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { curiosities } from "@/data/curiosities";
+import { listArticles, seedArticlesIfEmpty } from "@/lib/db/articles";
+import { listClassifieds } from "@/lib/db/classifieds";
 import { getSponsorshipTier, sortWorkshopsBySponsorship } from "@/lib/db/platform";
 import { listWorkshops } from "@/lib/db/workshops";
 import type { SponsorshipTier } from "@/types/platform-admin";
 
 export default async function HomePage() {
-  const featuredCuriosities = curiosities.slice(0, 3);
+  await seedArticlesIfEmpty();
+  const dbArticles = await listArticles(true);
+  const featuredCuriosities = dbArticles.length > 0
+    ? dbArticles.slice(0, 3).map((a) => ({
+        id: a.id,
+        title: a.title,
+        summary: a.summary,
+        content: a.content,
+        category: a.category,
+        icon: a.icon,
+      }))
+    : curiosities.slice(0, 3);
+  const classifiedPreview = (await listClassifieds({ activeOnly: true })).slice(0, 3);
   const workshops = await sortWorkshopsBySponsorship(await listWorkshops());
   const cities = new Set(workshops.map((w) => w.city));
 
@@ -57,14 +71,14 @@ export default async function HomePage() {
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <SectionHeader
             eyebrow="Conteúdo"
-            title="Conhecimento automotivo"
-            description="Artigos práticos para tomar melhores decisões sobre manutenção e escolha de serviços."
+            title="Notícias relevantes"
+            description="Avisos e artigos publicados pela equipe MP Oficinas."
             action={
               <Link
                 href="/curiosidades"
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:text-accent-hover"
               >
-                Ver conteúdo
+                Ver notícias
                 <Icon name="arrow-right" className="h-4 w-4" />
               </Link>
             }
@@ -76,6 +90,32 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {classifiedPreview.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
+          <SectionHeader
+            eyebrow="Classificados"
+            title="Vendas e oportunidades"
+            description="Anúncios de oficinas parceiras"
+            action={
+              <Link href="/classificados" className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:text-accent-hover">
+                Ver todos
+                <Icon name="arrow-right" className="h-4 w-4" />
+              </Link>
+            }
+          />
+          <div className="grid gap-6 md:grid-cols-3">
+            {classifiedPreview.map((ad) => (
+              <article key={ad.id} className="card p-5">
+                <span className="text-xs font-semibold uppercase text-accent">{ad.category}</span>
+                <h3 className="mt-2 font-semibold">{ad.title}</h3>
+                <p className="mt-2 line-clamp-3 text-sm text-muted">{ad.body}</p>
+                {ad.price != null && <p className="mt-2 font-medium">R$ {ad.price.toLocaleString("pt-BR")}</p>}
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="card overflow-hidden">

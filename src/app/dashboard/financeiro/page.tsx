@@ -25,6 +25,8 @@ export default function FinanceiroPage() {
     name: "",
     amount: "",
     dueAt: "",
+    installmentCount: "1",
+    isRecurring: false,
   });
 
   const refresh = useCallback(async () => {
@@ -47,9 +49,11 @@ export default function FinanceiroPage() {
         name: form.name,
         amount: Number(form.amount),
         dueAt: form.dueAt || undefined,
+        installmentCount: Number(form.installmentCount) > 1 ? Number(form.installmentCount) : undefined,
+        isRecurring: form.isRecurring,
       }),
     });
-    setForm({ kind: "pagar", name: "", amount: "", dueAt: "" });
+    setForm({ kind: "pagar", name: "", amount: "", dueAt: "", installmentCount: "1", isRecurring: false });
     await refresh();
   }
 
@@ -82,7 +86,83 @@ export default function FinanceiroPage() {
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   }
 
-  const filteredEntries = overview?.entries.filter((e) => inPeriod(e.dueAt)) ?? [];
+  async function markInstallment(entryId: string, num: number) {
+    await fetch("/api/finance", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "mark-installment", entryId, installmentNumber: num, paid: true }),
+    });
+    await refresh();
+  }
+
+  async function anticipate(entryId: string, numbers: number[]) {
+    await fetch("/api/finance", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "anticipate", entryId, installmentNumbers: numbers }),
+    });
+    await refresh();
+  }
+
+  async function finishRecurring(entryId: string) {
+    await fetch("/api/finance", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "finish-recurring", entryId }),
+    });
+    await refresh();
+  }
+
+  function renderEntryRow(e: FinancialEntryRecord, payLabel: string) {
+    if (e.installments?.length) {
+      return [
+        `${e.name} (${e.installments.length}x)`,
+        `R$ ${e.amount.toFixed(2)}`,
+        e.dueAt ? new Date(e.dueAt).toLocaleDateString("pt-BR") : "—",
+        e.paid ? "Quitado" : `${e.installments.filter((i) => !i.paid).length} parcela(s)`,
+        <div key={e.id} className="space-y-1">
+          {e.installments.map((inst) => (
+            <div key={inst.number} className="flex flex-wrap items-center gap-1 text-xs">
+              <span>{inst.number}ª — R$ {inst.amount.toFixed(2)} — {new Date(inst.dueAt).toLocaleDateString("pt-BR")}</span>
+              {inst.paid ? (
+                <span className="dash-badge">{inst.anticipated ? "Antecipada" : "Paga"}</span>
+              ) : (
+                <>
+                  <ActionButton label={payLabel} variant="primary" onClick={() => void markInstallment(e.id, inst.number)} />
+                  <ActionButton label="Antecipar" onClick={() => void anticipate(e.id, [inst.number])} />
+                </>
+              )}
+            </div>
+          ))}
+          {e.isRecurring && e.recurringActive && (
+            <ActionButton label="Finalizar recorrente" onClick={() => void finishRecurring(e.id)} />
+          )}
+        </div>,
+      ];
+    }
+    return [
+      e.name,
+      `R$ ${e.amount.toFixed(2)}`,
+      e.dueAt ? new Date(e.dueAt).toLocaleDateString("pt-BR") : "—",
+      e.paid ? "Pago" : "Pendente",
+      !e.paid ? (
+        <ActionButton key={e.id} label={payLabel} variant="primary" onClick={() => void markPaid(e.id)} />
+      ) : (
+        e.isRecurring && e.recurringActive ? (
+          <ActionButton key={e.id} label="Finalizar recorrente" onClick={() => void finishRecurring(e.id)} />
+        ) : "—"
+      ),
+    ];
+  }
+
+  const filteredEntries =
+    overview?.entries.filter((e) => {
+      if (periodFilter === "all") return true;
+      if (e.installments?.length) {
+        return e.installments.some((i) => inPeriod(i.dueAt));
+      }
+      return inPeriod(e.dueAt);
+    }) ?? [];
   const receber = filteredEntries.filter((e) => e.kind === "receber");
   const pagar = filteredEntries.filter((e) => e.kind === "pagar");
 
@@ -122,17 +202,7 @@ export default function FinanceiroPage() {
           <PeriodFilter value={periodFilter} onChange={setPeriodFilter} />
           <DataTable
           headers={["Nome", "Valor", "Vencimento", "Status", "Ações"]}
-          rows={pagar.map((e) => [
-            e.name,
-            `R$ ${e.amount.toFixed(2)}`,
-            e.dueAt ? new Date(e.dueAt).toLocaleDateString("pt-BR") : "—",
-            e.paid ? "Pago" : "Pendente",
-            !e.paid ? (
-              <ActionButton key={e.id} label="Marcar pago" variant="primary" onClick={() => void markPaid(e.id)} />
-            ) : (
-              "—"
-            ),
-          ])}
+          rows={pagar.map((e) => renderEntryRow(e, "Marcar pago"))}
         />
         </div>
       ),
@@ -145,17 +215,7 @@ export default function FinanceiroPage() {
           <PeriodFilter value={periodFilter} onChange={setPeriodFilter} />
           <DataTable
           headers={["Nome", "Valor", "Vencimento", "Status", "Ações"]}
-          rows={receber.map((e) => [
-            e.name,
-            `R$ ${e.amount.toFixed(2)}`,
-            e.dueAt ? new Date(e.dueAt).toLocaleDateString("pt-BR") : "—",
-            e.paid ? "Recebido" : "Pendente",
-            !e.paid ? (
-              <ActionButton key={e.id} label="Receber" variant="success" onClick={() => void markPaid(e.id)} />
-            ) : (
-              "—"
-            ),
-          ])}
+          rows={receber.map((e) => renderEntryRow(e, "Receber"))}
         />
         </div>
       ),
@@ -195,7 +255,20 @@ export default function FinanceiroPage() {
             onChange={(e) => setForm({ ...form, dueAt: e.target.value })}
             className="input-field"
           />
-          <p className="text-xs text-muted">Lembretes com 1 dia de antecedência e no dia do vencimento (em breve por e-mail/notificação).</p>
+          <input
+            type="number"
+            min={1}
+            max={48}
+            value={form.installmentCount}
+            onChange={(e) => setForm({ ...form, installmentCount: e.target.value })}
+            className="input-field"
+            placeholder="Nº de parcelas (1 = à vista)"
+          />
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={form.isRecurring} onChange={(e) => setForm({ ...form, isRecurring: e.target.checked })} />
+            Recorrente mensal (só encerra quando finalizar)
+          </label>
+          <p className="text-xs text-muted">Parcelas geradas automaticamente. Use Antecipar para abater parcelas no mês atual.</p>
           <button type="submit" className="btn btn-primary">Cadastrar</button>
         </form>
       ),

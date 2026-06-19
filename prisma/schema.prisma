@@ -48,6 +48,18 @@ enum AnnouncementStyle {
   alerta
 }
 
+enum AnnouncementDisplayType {
+  banner
+  modal
+}
+
+enum SubscriptionStatus {
+  ativa
+  atrasada
+  suspensa
+  cancelada
+}
+
 enum ServiceOrderStatus {
   pendente
   em_andamento
@@ -133,6 +145,8 @@ model Workshop {
   salaryAdvances  SalaryAdvance[]
   managerPermissions ManagerPermissionGrant[]
   financialEntries FinancialEntry[]
+  subscription    WorkshopSubscription?
+  classifiedAds   ClassifiedAd[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 }
@@ -267,15 +281,64 @@ model Sponsorship {
 }
 
 model SiteAnnouncement {
-  id        String                @id
+  id          String                  @id
+  title       String
+  message     String
+  linkUrl     String?
+  linkLabel   String?
+  mediaUrl    String?
+  placement   AnnouncementPlacement
+  style       AnnouncementStyle
+  displayType AnnouncementDisplayType @default(banner)
+  active      Boolean                 @default(true)
+  createdAt   DateTime
+}
+
+model WorkshopSubscription {
+  id             String             @id @default(cuid())
+  workshopId     String             @unique
+  workshop       Workshop           @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  monthlyValue   Float              @default(0)
+  nextDueAt      DateTime
+  status         SubscriptionStatus @default(ativa)
+  paid           Boolean            @default(false)
+  paymentLink    String?
+  lastChargedAt  DateTime?
+  lastReminderAt DateTime?
+  notes          String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+}
+
+model SiteArticle {
+  id        String   @id @default(cuid())
   title     String
-  message   String
-  linkUrl   String?
-  linkLabel String?
-  placement AnnouncementPlacement
-  style     AnnouncementStyle
-  active    Boolean               @default(true)
-  createdAt DateTime
+  summary   String
+  content   String
+  category  String   @default("geral")
+  icon      String   @default("car")
+  imageUrl  String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ClassifiedAd {
+  id         String    @id @default(cuid())
+  workshopId String?
+  workshop   Workshop? @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  title      String
+  body       String
+  price      Float?
+  contact    String?
+  category   String    @default("geral")
+  images     Json?
+  active     Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime?
+
+  @@index([workshopId])
+  @@index([active, createdAt])
 }
 
 enum CatalogItemKind {
