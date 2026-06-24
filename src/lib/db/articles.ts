@@ -13,6 +13,8 @@ export interface SiteArticleRecord {
   imageUrl: string | null;
   featured: boolean;
   active: boolean;
+  authorId: string | null;
+  authorName: string | null;
   createdAt: string;
 }
 
@@ -27,12 +29,36 @@ async function uniqueSlug(base: string, excludeId?: string): Promise<string> {
   }
 }
 
-export async function listArticles(activeOnly = true): Promise<SiteArticleRecord[]> {
+export interface ListArticlesOptions {
+  activeOnly?: boolean;
+  category?: string;
+}
+
+export async function listArticles(
+  activeOnlyOrOptions: boolean | ListArticlesOptions = true
+): Promise<SiteArticleRecord[]> {
+  const options: ListArticlesOptions =
+    typeof activeOnlyOrOptions === "boolean"
+      ? { activeOnly: activeOnlyOrOptions }
+      : activeOnlyOrOptions;
+  const activeOnly = options.activeOnly ?? true;
   const rows = await prisma.siteArticle.findMany({
-    where: activeOnly ? { active: true } : {},
+    where: {
+      ...(activeOnly ? { active: true } : {}),
+      ...(options.category ? { category: options.category } : {}),
+    },
+    include: { author: { select: { name: true } } },
     orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
   });
   return rows.map(mapArticle);
+}
+
+export async function getArticleAdminById(id: string): Promise<SiteArticleRecord | null> {
+  const row = await prisma.siteArticle.findUnique({
+    where: { id },
+    include: { author: { select: { name: true } } },
+  });
+  return row ? mapArticle(row) : null;
 }
 
 export function pickLeadArticle(articles: SiteArticleRecord[]): SiteArticleRecord | null {
@@ -87,10 +113,12 @@ export async function upsertArticle(input: {
   featured?: boolean;
   active?: boolean;
   slug?: string;
+  authorId?: string | null;
 }): Promise<SiteArticleRecord> {
   const baseSlug = slugifyTitle(input.slug ?? input.title);
+  const allowFeatured = input.featured === true;
 
-  if (input.featured) {
+  if (allowFeatured) {
     await prisma.siteArticle.updateMany({
       where: input.id ? { id: { not: input.id } } : {},
       data: { featured: false },
@@ -111,7 +139,9 @@ export async function upsertArticle(input: {
         slug: await uniqueSlug(baseSlug, input.id),
         ...(input.featured !== undefined ? { featured: input.featured } : {}),
         ...(input.active !== undefined ? { active: input.active } : {}),
+        ...(input.authorId !== undefined ? { authorId: input.authorId } : {}),
       },
+      include: { author: { select: { name: true } } },
     });
     return mapArticle(row);
   }
@@ -128,7 +158,9 @@ export async function upsertArticle(input: {
       slug: await uniqueSlug(baseSlug),
       featured: input.featured ?? false,
       active: input.active ?? true,
+      authorId: input.authorId ?? null,
     },
+    include: { author: { select: { name: true } } },
   });
   return mapArticle(row);
 }
@@ -154,6 +186,8 @@ function mapArticle(row: {
   imageUrl: string | null;
   featured: boolean;
   active: boolean;
+  authorId?: string | null;
+  author?: { name: string } | null;
   createdAt: Date;
 }): SiteArticleRecord {
   return {
@@ -168,6 +202,8 @@ function mapArticle(row: {
     imageUrl: row.imageUrl,
     featured: row.featured,
     active: row.active,
+    authorId: row.authorId ?? null,
+    authorName: row.author?.name ?? null,
     createdAt: row.createdAt.toISOString(),
   };
 }

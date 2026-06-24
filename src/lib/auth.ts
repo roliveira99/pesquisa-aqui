@@ -24,7 +24,7 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
   },
 ];
 
-const VALID_ROLES: UserRole[] = ["master", "dono", "gerencia", "mecanico"];
+const VALID_ROLES: UserRole[] = ["master", "jornalista", "dono", "gerencia", "mecanico"];
 
 export function isValidAuthUser(user: unknown): user is AuthUser {
   if (!user || typeof user !== "object") return false;

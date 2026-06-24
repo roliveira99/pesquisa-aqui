@@ -1,9 +1,11 @@
 import type { BusinessVertical } from "@/types/vertical";
 import type { NavItem, Permission, UserRole } from "@/types/auth";
+import { getCategoryLabel } from "@/lib/article-categories";
 import { getOperationalConfig } from "@/lib/verticals/operational";
 
 export const roleLabels: Record<UserRole, string> = {
   master: "Administrador Master",
+  jornalista: "Jornalista",
   dono: "Dono da Oficina",
   gerencia: "Gerência",
   mecanico: "Mecânico",
@@ -11,6 +13,7 @@ export const roleLabels: Record<UserRole, string> = {
 
 export const roleIcons: Record<UserRole, string> = {
   master: "users",
+  jornalista: "sparkles",
   dono: "building",
   gerencia: "clipboard",
   mecanico: "wrench",
@@ -28,7 +31,10 @@ const masterPermissions: Permission[] = [
   "admin.moderar_avaliacoes",
   "admin.gerenciar_patrocinios",
   "admin.gerenciar_anuncios",
+  "admin.gerenciar_jornalistas",
 ];
+
+const jornalistaPermissions: Permission[] = ["jornalista.gerenciar_manchetes"];
 
 const donoPermissions: Permission[] = [
   "owner.dashboard",
@@ -90,6 +96,7 @@ const mecanicoPermissions: Permission[] = [
 
 export const rolePermissions: Record<UserRole, Permission[]> = {
   master: masterPermissions,
+  jornalista: jornalistaPermissions,
   dono: donoPermissions,
   gerencia: gerenciaPermissions,
   mecanico: mecanicoPermissions,
@@ -97,6 +104,11 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
 
 export const roleRestrictions: Record<UserRole, string[]> = {
   master: ["Alterar dados operacionais sem permissão da oficina"],
+  jornalista: [
+    "Publica apenas na editoria atribuída",
+    "Não define capa do jornal na home",
+    "Não promove classificados premium",
+  ],
   dono: ["Alterar configurações globais da plataforma"],
   gerencia: [
     "Não visualiza salários",
@@ -123,6 +135,9 @@ export const navigationByRole: Record<UserRole, NavItem[]> = {
     { href: "/dashboard/admin/assinaturas", label: "Assinaturas", icon: "credit-card", permission: "admin.controle_assinaturas", group: "Financeiro" },
     { href: "/dashboard/admin/relatorios", label: "Relatórios globais", icon: "chart", permission: "admin.relatorios_globais", group: "Relatórios" },
     { href: "/dashboard/admin/suporte", label: "Suporte", icon: "headset", permission: "admin.suporte", group: "Suporte" },
+  ],
+  jornalista: [
+    { href: "/dashboard/jornal", label: "Minha editoria", icon: "sparkles", permission: "jornalista.gerenciar_manchetes" },
   ],
   dono: [
     { href: "/dashboard", label: "Dashboard", icon: "dashboard", permission: "owner.dashboard" },
@@ -168,7 +183,10 @@ export function hasAnyPermission(role: UserRole, permissions: Permission[]): boo
   return permissions.some((p) => hasPermission(role, p));
 }
 
-export function getRoleLabel(role: UserRole, vertical?: BusinessVertical | null): string {
+export function getRoleLabel(role: UserRole, vertical?: BusinessVertical | null, journalNiche?: string | null): string {
+  if (role === "jornalista" && journalNiche) {
+    return `Jornalista — ${getCategoryLabel(journalNiche)}`;
+  }
   if (role === "mecanico") {
     return getOperationalConfig(vertical).roles.operator;
   }

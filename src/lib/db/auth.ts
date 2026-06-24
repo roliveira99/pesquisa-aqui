@@ -20,6 +20,7 @@ export function toAuthUser(
     workshopId: user.workshopId,
     workshopName: workshop?.name ?? null,
     workshopVertical: workshop?.vertical ?? null,
+    journalNiche: user.journalNiche ?? null,
   };
 }
 

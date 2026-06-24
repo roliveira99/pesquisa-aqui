@@ -83,3 +83,60 @@ export async function apiDeleteUser(id: string) {
   if (res.status === 401) return { error: "Sessão expirada. Faça login novamente." };
   return res.json() as Promise<{ ok: true } | { error: string }>;
 }
+
+export async function fetchAdminJournalists(): Promise<{ journalists: import("@/lib/db/admin").JournalistRow[] }> {
+  const res = await fetch("/api/admin/journalists", fetchOpts);
+  if (res.status === 401) throw new Error("Sessão expirada. Faça login novamente.");
+  if (res.status === 403) throw new Error("Sem permissão para gerenciar jornalistas.");
+  if (!res.ok) throw new Error("Falha ao carregar jornalistas.");
+  return res.json() as Promise<{ journalists: import("@/lib/db/admin").JournalistRow[] }>;
+}
+
+export async function apiCreateJournalist(input: {
+  name: string;
+  email: string;
+  password: string;
+  journalNiche: string;
+}) {
+  const res = await fetch("/api/admin/journalists", {
+    ...fetchOpts,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  const data = (await res.json()) as
+    | { ok: true; user: import("@/lib/db/admin").JournalistRow }
+    | { error: string };
+  if (res.status === 401) return { error: "Sessão expirada. Faça login novamente." };
+  if ("error" in data && data.error) return { error: data.error };
+  return data;
+}
+
+export async function apiUpdateJournalist(input: {
+  id: string;
+  name?: string;
+  journalNiche?: string;
+  password?: string;
+}) {
+  const res = await fetch("/api/admin/journalists", {
+    ...fetchOpts,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  const data = (await res.json()) as
+    | { ok: true; user: import("@/lib/db/admin").JournalistRow }
+    | { error: string };
+  if (res.status === 401) return { error: "Sessão expirada. Faça login novamente." };
+  if ("error" in data && data.error) return { error: data.error };
+  return data;
+}
+
+export async function apiDeleteJournalist(id: string) {
+  const res = await fetch(`/api/admin/journalists?id=${encodeURIComponent(id)}`, {
+    ...fetchOpts,
+    method: "DELETE",
+  });
+  if (res.status === 401) return { error: "Sessão expirada. Faça login novamente." };
+  return res.json() as Promise<{ ok: true } | { error: string }>;
+}

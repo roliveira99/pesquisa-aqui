@@ -23,5 +23,9 @@ export function getCategoryDef(value: string): ArticleCategoryDef | undefined {
   return ARTICLE_CATEGORIES.find((c) => c.value === value);
 }
 
+export function isValidArticleCategory(value: string): boolean {
+  return ARTICLE_CATEGORIES.some((c) => c.value === value);
+}
+
 /** Colunas exibidas na home do jornal (ordem editorial). */
 export const HOME_JOURNAL_COLUMNS = ["cidade", "esporte", "negocios"] as const;

@@ -9,6 +9,7 @@ datasource db {
 
 enum UserRole {
   master
+  jornalista
   dono
   gerencia
   mecanico
@@ -93,16 +94,18 @@ enum MechanicKind {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
+  id           String        @id @default(cuid())
+  email        String        @unique
   passwordHash String
   name         String
   role         UserRole
+  journalNiche String?
   workshopId   String?
-  workshop     Workshop? @relation(fields: [workshopId], references: [id], onDelete: SetNull)
+  workshop     Workshop?     @relation(fields: [workshopId], references: [id], onDelete: SetNull)
+  articles     SiteArticle[]
   sessions     Session[]
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }
 
 model Session {
@@ -347,8 +350,13 @@ model SiteArticle {
   imageUrl  String?
   featured  Boolean  @default(false)
   active    Boolean  @default(true)
+  authorId  String?
+  author    User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([authorId])
+  @@index([category])
 }
 
 model ClassifiedAd {

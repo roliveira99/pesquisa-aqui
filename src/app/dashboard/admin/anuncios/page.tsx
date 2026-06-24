@@ -5,6 +5,7 @@ import { ActionButton, DataTable, PageHeader, TabPanel } from "@/components/dash
 import { PermissionGuard } from "@/components/dashboard/PermissionGuard";
 import { ClassifiedPremiumAdminPanel } from "@/components/admin/ClassifiedPremiumAdminPanel";
 import { JournalAdminPanel } from "@/components/admin/JournalAdminPanel";
+import { JournalistsAdminPanel } from "@/components/admin/JournalistsAdminPanel";
 import {
   apiAddAnnouncement,
   apiDeleteAnnouncement,
@@ -66,6 +67,11 @@ export default function AdminAnunciosPage() {
       id: "jornal",
       label: "Jornal / Manchetes",
       content: <JournalAdminPanel onFeedback={setFeedback} />,
+    },
+    {
+      id: "jornalistas",
+      label: "Jornalistas",
+      content: <JournalistsAdminPanel onFeedback={setFeedback} />,
     },
     {
       id: "classificados",

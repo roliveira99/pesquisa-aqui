@@ -37,7 +37,7 @@ async function loginWithDatabase(
     return { status: "invalid" };
   }
 
-  if (dbUser.role !== "master" && dbUser.workshop?.blocked) {
+  if (dbUser.role !== "master" && dbUser.role !== "jornalista" && dbUser.workshop?.blocked) {
     return { status: "blocked" };
   }
 

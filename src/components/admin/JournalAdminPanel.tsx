@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActionButton, DataTable } from "@/components/dashboard/DashboardUI";
 import { ARTICLE_CATEGORIES } from "@/lib/article-categories";
 import { articleHref, formatCategoryLabel } from "@/lib/article-slug";
@@ -16,26 +16,41 @@ interface ArticleRow {
   imageUrl: string | null;
   featured: boolean;
   active: boolean;
+  authorName?: string | null;
 }
 
-const emptyForm = {
-  id: "",
-  title: "",
-  summary: "",
-  content: "",
-  category: "cidade",
-  city: "",
-  imageUrl: "",
-  featured: false,
-};
+interface JournalAdminPanelProps {
+  onFeedback: (msg: string) => void;
+  mode?: "master" | "jornalista";
+  lockedCategory?: string;
+}
 
-export function JournalAdminPanel({ onFeedback }: { onFeedback: (msg: string) => void }) {
+function buildEmptyForm(category: string) {
+  return {
+    id: "",
+    title: "",
+    summary: "",
+    content: "",
+    category,
+    city: "",
+    imageUrl: "",
+    featured: false,
+  };
+}
+
+export function JournalAdminPanel({
+  onFeedback,
+  mode = "master",
+  lockedCategory,
+}: JournalAdminPanelProps) {
+  const isMaster = mode === "master";
+  const defaultCategory = lockedCategory ?? "cidade";
   const [articles, setArticles] = useState<ArticleRow[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(() => buildEmptyForm(defaultCategory));
 
   const refresh = useCallback(async () => {
-    const res = await fetch("/api/articles?admin=1");
+    const res = await fetch("/api/articles?admin=1", { credentials: "include" });
     if (res.ok) {
       const data = (await res.json()) as { articles: ArticleRow[] };
       setArticles(data.articles);
@@ -46,13 +61,25 @@ export function JournalAdminPanel({ onFeedback }: { onFeedback: (msg: string) =>
     void refresh();
   }, [refresh]);
 
+  const tableHeaders = useMemo(() => {
+    const headers = ["Título", "Editoria", "Cidade"];
+    if (isMaster) headers.push("Autor", "Capa");
+    headers.push("Status", "Ações");
+    return headers;
+  }, [isMaster]);
+
+  function openNewForm() {
+    setForm(buildEmptyForm(defaultCategory));
+    setShowForm(true);
+  }
+
   function startEdit(article: ArticleRow) {
     setForm({
       id: article.id,
       title: article.title,
       summary: article.summary,
       content: article.content,
-      category: article.category,
+      category: isMaster ? article.category : defaultCategory,
       city: article.city ?? "",
       imageUrl: article.imageUrl ?? "",
       featured: article.featured,
@@ -61,14 +88,16 @@ export function JournalAdminPanel({ onFeedback }: { onFeedback: (msg: string) =>
   }
 
   function resetForm() {
-    setForm(emptyForm);
+    setForm(buildEmptyForm(defaultCategory));
     setShowForm(false);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const category = isMaster ? form.category : defaultCategory;
     const res = await fetch("/api/articles", {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         action: "upsert",
@@ -76,10 +105,10 @@ export function JournalAdminPanel({ onFeedback }: { onFeedback: (msg: string) =>
         title: form.title,
         summary: form.summary,
         content: form.content,
-        category: form.category,
-        city: form.category === "cidade" ? form.city : null,
+        category,
+        city: category === "cidade" ? form.city : null,
         imageUrl: form.imageUrl || null,
-        featured: form.featured,
+        featured: isMaster ? form.featured : false,
       }),
     });
     const data = (await res.json()) as { ok?: boolean; error?: string };
@@ -93,21 +122,33 @@ export function JournalAdminPanel({ onFeedback }: { onFeedback: (msg: string) =>
   }
 
   async function toggleActive(article: ArticleRow) {
-    await fetch("/api/articles", {
+    const res = await fetch("/api/articles", {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "toggle-active", id: article.id, active: !article.active }),
     });
+    const data = (await res.json()) as { ok?: boolean; error?: string };
+    if (!data.ok) {
+      onFeedback(data.error ?? "Erro ao alterar status.");
+      return;
+    }
     onFeedback(article.active ? "Manchete desativada." : "Manchete reativada.");
     await refresh();
   }
 
   async function handleDelete(id: string) {
-    await fetch("/api/articles", {
+    const res = await fetch("/api/articles", {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "delete", id }),
     });
+    const data = (await res.json()) as { ok?: boolean; error?: string };
+    if (!data.ok) {
+      onFeedback(data.error ?? "Erro ao excluir manchete.");
+      return;
+    }
     onFeedback("Manchete excluída.");
     await refresh();
   }
@@ -115,15 +156,24 @@ export function JournalAdminPanel({ onFeedback }: { onFeedback: (msg: string) =>
   return (
     <div>
       <p className="mb-4 text-sm text-muted">
-        Crie manchetes para o jornal no topo do site: escolha a editoria (cidade, esporte, negócios…),
-        adicione imagem por URL e marque uma como <strong>capa</strong> para aparecer em destaque na home.
+        {isMaster ? (
+          <>
+            Crie manchetes para o jornal no topo do site: escolha a editoria (cidade, esporte, negócios…),
+            adicione imagem por URL e marque uma como <strong>capa</strong> para aparecer em destaque na home.
+          </>
+        ) : (
+          <>
+            Publique manchetes na editoria <strong>{formatCategoryLabel(defaultCategory)}</strong>.
+            A capa do jornal na home é definida pelo administrador master.
+          </>
+        )}
       </p>
 
       <div className="mb-4 flex flex-wrap justify-end gap-2">
         <ActionButton
           label={showForm ? "Cancelar" : "+ Nova manchete"}
           variant="primary"
-          onClick={() => (showForm ? resetForm() : setShowForm(true))}
+          onClick={() => (showForm ? resetForm() : openNewForm())}
         />
       </div>
 
@@ -139,18 +189,24 @@ export function JournalAdminPanel({ onFeedback }: { onFeedback: (msg: string) =>
               className="input-field sm:col-span-2"
               placeholder="Título da manchete *"
             />
-            <select
-              value={form.category}
-              onChange={(e) => setForm({ ...form, category: e.target.value })}
-              className="input-field"
-            >
-              {ARTICLE_CATEGORIES.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.label} — {c.description}
-                </option>
-              ))}
-            </select>
-            {form.category === "cidade" && (
+            {isMaster ? (
+              <select
+                value={form.category}
+                onChange={(e) => setForm({ ...form, category: e.target.value })}
+                className="input-field"
+              >
+                {ARTICLE_CATEGORIES.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.label} — {c.description}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="input-field flex items-center bg-surface-hover text-sm text-muted">
+                Editoria: {formatCategoryLabel(defaultCategory)}
+              </div>
+            )}
+            {(isMaster ? form.category : defaultCategory) === "cidade" && (
               <input
                 value={form.city}
                 onChange={(e) => setForm({ ...form, city: e.target.value })}
@@ -181,15 +237,17 @@ export function JournalAdminPanel({ onFeedback }: { onFeedback: (msg: string) =>
             placeholder="Texto completo da matéria (parágrafos separados por linha em branco) *"
           />
 
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={form.featured}
-              onChange={(e) => setForm({ ...form, featured: e.target.checked })}
-              className="rounded border-border"
-            />
-            Destaque na capa do jornal (home)
-          </label>
+          {isMaster && (
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={form.featured}
+                onChange={(e) => setForm({ ...form, featured: e.target.checked })}
+                className="rounded border-border"
+              />
+              Destaque na capa do jornal (home)
+            </label>
+          )}
 
           <button type="submit" className="btn btn-primary">
             {form.id ? "Salvar alterações" : "Publicar manchete"}
@@ -198,32 +256,39 @@ export function JournalAdminPanel({ onFeedback }: { onFeedback: (msg: string) =>
       )}
 
       <DataTable
-        headers={["Título", "Editoria", "Cidade", "Capa", "Status", "Ações"]}
-        rows={articles.map((a) => [
-          a.title,
-          formatCategoryLabel(a.category),
-          a.city ?? "—",
-          a.featured ? "Sim" : "—",
-          a.active ? "Publicada" : "Inativa",
-          <div key={a.id} className="flex flex-wrap gap-1">
-            <ActionButton label="Editar" onClick={() => startEdit(a)} />
-            <ActionButton
-              label={a.active ? "Desativar" : "Ativar"}
-              onClick={() => void toggleActive(a)}
-            />
-            {a.slug && a.active && (
-              <a
-                href={articleHref(a)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center rounded-md border border-border px-2 py-1 text-xs font-medium hover:bg-surface-hover"
-              >
-                Ver
-              </a>
-            )}
-            <ActionButton label="Excluir" variant="danger" onClick={() => void handleDelete(a.id)} />
-          </div>,
-        ])}
+        headers={tableHeaders}
+        rows={articles.map((a) => {
+          const cells: React.ReactNode[] = [
+            a.title,
+            formatCategoryLabel(a.category),
+            a.city ?? "—",
+          ];
+          if (isMaster) {
+            cells.push(a.authorName ?? "—", a.featured ? "Sim" : "—");
+          }
+          cells.push(
+            a.active ? "Publicada" : "Inativa",
+            <div key={a.id} className="flex flex-wrap gap-1">
+              <ActionButton label="Editar" onClick={() => startEdit(a)} />
+              <ActionButton
+                label={a.active ? "Desativar" : "Ativar"}
+                onClick={() => void toggleActive(a)}
+              />
+              {a.slug && a.active && (
+                <a
+                  href={articleHref(a)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center rounded-md border border-border px-2 py-1 text-xs font-medium hover:bg-surface-hover"
+                >
+                  Ver
+                </a>
+              )}
+              <ActionButton label="Excluir" variant="danger" onClick={() => void handleDelete(a.id)} />
+            </div>
+          );
+          return cells;
+        })}
       />
     </div>
   );

@@ -1,4 +1,4 @@
-export type UserRole = "master" | "dono" | "gerencia" | "mecanico";
+export type UserRole = "master" | "jornalista" | "dono" | "gerencia" | "mecanico";
 
 export type Permission =
   | "admin.aprovar_oficinas"
@@ -12,6 +12,8 @@ export type Permission =
   | "admin.moderar_avaliacoes"
   | "admin.gerenciar_patrocinios"
   | "admin.gerenciar_anuncios"
+  | "admin.gerenciar_jornalistas"
+  | "jornalista.gerenciar_manchetes"
   | "owner.dashboard"
   | "owner.fluxo_caixa"
   | "owner.contas_pagar"
@@ -70,6 +72,7 @@ export interface AuthUser {
   workshopId: string | null;
   workshopName: string | null;
   workshopVertical?: import("@/types/vertical").BusinessVertical | null;
+  journalNiche?: string | null;
 }
 
 export interface NavItem {

@@ -1,4 +1,5 @@
 import { getVerticalConfig } from "@/lib/verticals/config";
+import { isValidArticleCategory } from "@/lib/article-categories";
 import type { Prisma, UserRole, WorkshopType } from "@prisma/client";
 import { hashPassword } from "@/lib/db/auth";
 import { prisma } from "@/lib/db/prisma";
@@ -15,8 +16,11 @@ export type AdminUserRow = {
   role: UserRole;
   workshopId: string | null;
   workshopName: string | null;
+  journalNiche: string | null;
   createdAt: string;
 };
+
+export type JournalistRow = AdminUserRow & { role: "jornalista" };
 
 export async function listAdminWorkshops(): Promise<Workshop[]> {
   const rows = await prisma.workshop.findMany({ orderBy: { name: "asc" } });
@@ -152,18 +156,42 @@ export async function deleteWorkshop(workshopId: string): Promise<{ ok: true } |
 
 export async function listAdminUsers(): Promise<AdminUserRow[]> {
   const rows = await prisma.user.findMany({
+    where: { role: { not: "jornalista" } },
     orderBy: [{ role: "asc" }, { name: "asc" }],
     include: { workshop: { select: { name: true } } },
   });
-  return rows.map((u) => ({
+  return rows.map(mapAdminUserRow);
+}
+
+export async function listJournalists(): Promise<JournalistRow[]> {
+  const rows = await prisma.user.findMany({
+    where: { role: "jornalista" },
+    orderBy: [{ name: "asc" }],
+    include: { workshop: { select: { name: true } } },
+  });
+  return rows.map((u) => ({ ...mapAdminUserRow(u), role: "jornalista" as const }));
+}
+
+function mapAdminUserRow(u: {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  workshopId: string | null;
+  journalNiche: string | null;
+  createdAt: Date;
+  workshop: { name: string } | null;
+}): AdminUserRow {
+  return {
     id: u.id,
     name: u.name,
     email: u.email,
     role: u.role,
     workshopId: u.workshopId,
     workshopName: u.workshop?.name ?? null,
+    journalNiche: u.journalNiche,
     createdAt: u.createdAt.toISOString(),
-  }));
+  };
 }
 
 export async function createPlatformUser(input: {
@@ -204,16 +232,100 @@ export async function createPlatformUser(input: {
 
   return {
     ok: true,
-    user: {
-      id: row.id,
-      name: row.name,
-      email: row.email,
-      role: row.role,
-      workshopId: row.workshopId,
-      workshopName: row.workshop?.name ?? null,
-      createdAt: row.createdAt.toISOString(),
-    },
+    user: mapAdminUserRow(row),
   };
+}
+
+export async function createJournalist(input: {
+  name: string;
+  email: string;
+  password: string;
+  journalNiche: string;
+}): Promise<{ ok: true; user: JournalistRow } | { ok: false; error: string }> {
+  const email = input.email.toLowerCase().trim();
+  const name = input.name.trim();
+  const journalNiche = input.journalNiche.trim();
+
+  if (!name || !email || input.password.length < 6) {
+    return { ok: false, error: "Nome, e-mail válido e senha com no mínimo 6 caracteres." };
+  }
+  if (!isValidArticleCategory(journalNiche)) {
+    return { ok: false, error: "Escolha uma editoria válida para o jornalista." };
+  }
+
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) return { ok: false, error: "Este e-mail já possui conta." };
+
+  const row = await prisma.user.create({
+    data: {
+      email,
+      passwordHash: await hashPassword(input.password),
+      name,
+      role: "jornalista",
+      journalNiche,
+      workshopId: null,
+    },
+    include: { workshop: { select: { name: true } } },
+  });
+
+  return {
+    ok: true,
+    user: { ...mapAdminUserRow(row), role: "jornalista" },
+  };
+}
+
+export async function updateJournalist(input: {
+  id: string;
+  name?: string;
+  journalNiche?: string;
+  password?: string;
+}): Promise<{ ok: true; user: JournalistRow } | { ok: false; error: string }> {
+  const user = await prisma.user.findUnique({ where: { id: input.id } });
+  if (!user || user.role !== "jornalista") {
+    return { ok: false, error: "Jornalista não encontrado." };
+  }
+
+  const data: { name?: string; journalNiche?: string; passwordHash?: string } = {};
+  if (input.name !== undefined) {
+    const name = input.name.trim();
+    if (!name) return { ok: false, error: "Nome é obrigatório." };
+    data.name = name;
+  }
+  if (input.journalNiche !== undefined) {
+    const journalNiche = input.journalNiche.trim();
+    if (!isValidArticleCategory(journalNiche)) {
+      return { ok: false, error: "Escolha uma editoria válida." };
+    }
+    data.journalNiche = journalNiche;
+  }
+  if (input.password !== undefined) {
+    if (input.password.length < 6) {
+      return { ok: false, error: "Senha deve ter no mínimo 6 caracteres." };
+    }
+    data.passwordHash = await hashPassword(input.password);
+  }
+
+  const row = await prisma.user.update({
+    where: { id: input.id },
+    data,
+    include: { workshop: { select: { name: true } } },
+  });
+
+  return {
+    ok: true,
+    user: { ...mapAdminUserRow(row), role: "jornalista" },
+  };
+}
+
+export async function deleteJournalist(
+  userId: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user || user.role !== "jornalista") {
+    return { ok: false, error: "Jornalista não encontrado." };
+  }
+  await prisma.user.delete({ where: { id: userId } });
+  return { ok: true };
 }
 
 export async function deletePlatformUser(
@@ -223,6 +335,7 @@ export async function deletePlatformUser(
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) return { ok: false, error: "Usuário não encontrado." };
   if (user.role === "master") return { ok: false, error: "Não é possível remover o administrador master." };
+  if (user.role === "jornalista") return { ok: false, error: "Remova jornalistas pela aba Jornalistas." };
   if (user.email === adminEmail) return { ok: false, error: "Não é possível remover sua própria conta." };
   await prisma.user.delete({ where: { id: userId } });
   return { ok: true };
