@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { WorkshopCard } from "@/components/workshop/WorkshopCard";
+import { ArticleImage } from "@/components/news/ArticleImage";
 import { SiteSearchBar } from "@/components/search/SiteSearchBar";
 import { Icon } from "@/components/ui/Icon";
 import { SectionHeader } from "@/components/ui/SectionHeader";
@@ -61,17 +62,24 @@ export default async function BuscaPage({
                   <li key={article.id}>
                     <Link
                       href={articleHref(article)}
-                      className="card block h-full p-5 transition hover:shadow-md"
+                      className="card block h-full overflow-hidden transition hover:shadow-md"
                     >
-                      <span className="mb-2 inline-flex rounded-md bg-accent-soft px-2 py-0.5 text-xs font-semibold text-accent">
-                        {formatCategoryLabel(article.category)}
-                      </span>
-                      <h3 className="font-semibold leading-snug text-foreground">{article.title}</h3>
-                      <p className="mt-2 line-clamp-2 text-sm text-muted">{article.summary}</p>
-                      <p className="mt-3 text-xs text-muted">
-                        {formatArticleDateShort(article.createdAt)}
-                        {article.city ? ` · ${article.city}` : ""}
-                      </p>
+                      <ArticleImage
+                        article={article}
+                        className="aspect-[16/9] w-full object-cover"
+                        sizes="(max-width: 640px) 100vw, 50vw"
+                      />
+                      <div className="p-5">
+                        <span className="mb-2 inline-flex rounded-md bg-accent-soft px-2 py-0.5 text-xs font-semibold text-accent">
+                          {formatCategoryLabel(article.category)}
+                        </span>
+                        <h3 className="font-semibold leading-snug text-foreground">{article.title}</h3>
+                        <p className="mt-2 line-clamp-2 text-sm text-muted">{article.summary}</p>
+                        <p className="mt-3 text-xs text-muted">
+                          {formatArticleDateShort(article.createdAt)}
+                          {article.city ? ` · ${article.city}` : ""}
+                        </p>
+                      </div>
                     </Link>
                   </li>
                 ))}

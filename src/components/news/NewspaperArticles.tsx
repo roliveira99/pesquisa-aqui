@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import {
   articleHref,
@@ -8,35 +7,7 @@ import {
 import { ARTICLE_CATEGORIES, HOME_JOURNAL_COLUMNS, journalCategoryHref } from "@/lib/article-categories";
 import type { SiteArticleRecord } from "@/lib/db/articles";
 import { articlesByCategory } from "@/lib/db/articles";
-
-function ArticleImage({
-  article,
-  className,
-  priority,
-}: {
-  article: SiteArticleRecord;
-  className?: string;
-  priority?: boolean;
-}) {
-  if (article.imageUrl) {
-    return (
-      <Image
-        src={article.imageUrl}
-        alt=""
-        width={1200}
-        height={675}
-        priority={priority}
-        className={className}
-      />
-    );
-  }
-  return (
-    <div
-      className={`newspaper-photo-placeholder ${className ?? ""}`}
-      aria-hidden
-    />
-  );
-}
+import { ArticleImage } from "@/components/news/ArticleImage";
 
 export function NewspaperLeadStory({ article }: { article: SiteArticleRecord }) {
   const href = articleHref(article);
@@ -204,14 +175,13 @@ export function NewspaperCategoryColumns({
               {items.map((article) => (
                 <li key={article.id} className="py-3 first:pt-0 last:pb-0">
                   <Link href={articleHref(article)} className="group block">
-                    {article.imageUrl && (
-                      <div className="mb-2 overflow-hidden rounded-sm">
-                        <ArticleImage
-                          article={article}
-                          className="aspect-[16/10] w-full object-cover transition group-hover:scale-[1.02]"
-                        />
-                      </div>
-                    )}
+                    <div className="mb-2 overflow-hidden rounded-sm">
+                      <ArticleImage
+                        article={article}
+                        className="aspect-[16/10] w-full object-cover transition group-hover:scale-[1.02]"
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                      />
+                    </div>
                     {article.city && (
                       <span className="text-[10px] font-medium uppercase text-muted">{article.city}</span>
                     )}
