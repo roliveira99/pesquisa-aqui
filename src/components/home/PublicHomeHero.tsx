@@ -3,30 +3,33 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Icon } from "@/components/ui/Icon";
+import { APP_NAME } from "@/lib/brand";
+import { directoryUrl } from "@/lib/platform-routes";
+import { getVerticalConfig, VERTICAL_LIST } from "@/lib/verticals/config";
 import { workshopTypeLabels } from "@/lib/labels";
+import type { BusinessVertical } from "@/types/vertical";
 import type { WorkshopType } from "@/types/workshop";
 
 const popularCities = ["São Paulo", "Rio de Janeiro", "Belo Horizonte", "Curitiba", "Santos"];
 
-const typeOptions: { value: WorkshopType | ""; label: string }[] = [
-  { value: "", label: "Todos os tipos" },
-  { value: "carros", label: workshopTypeLabels.carros },
-  { value: "motos", label: workshopTypeLabels.motos },
-  { value: "mista", label: workshopTypeLabels.mista },
-  { value: "estetica", label: workshopTypeLabels.estetica },
-];
-
 export function PublicHomeHero() {
   const router = useRouter();
   const [query, setQuery] = useState("");
-  const [type, setType] = useState<WorkshopType | "">("");
+  const [segment, setSegment] = useState<BusinessVertical | "">("");
+  const [subFilter, setSubFilter] = useState("");
+
+  const segmentConfig = segment ? getVerticalConfig(segment) : null;
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-    const params = new URLSearchParams();
-    if (query.trim()) params.set("q", query.trim());
-    if (type) params.set("tipo", type);
-    router.push(`/oficinas${params.toString() ? `?${params}` : ""}`);
+    const params: { q?: string; segmento?: BusinessVertical; tipo?: string; categoria?: string } = {};
+    if (query.trim()) params.q = query.trim();
+    if (segment) params.segmento = segment;
+    if (subFilter) {
+      if (segmentConfig?.usesAutomotiveTypes) params.tipo = subFilter;
+      else params.categoria = subFilter;
+    }
+    router.push(directoryUrl(params));
   }
 
   return (
@@ -35,7 +38,7 @@ export function PublicHomeHero() {
         className="absolute inset-0 bg-cover bg-center opacity-20 dark:opacity-10"
         style={{
           backgroundImage:
-            "url(https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=1600&q=80)",
+            "url(https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1600&q=80)",
         }}
       />
       <div className="absolute inset-0 bg-gradient-to-br from-accent/15 via-surface/95 to-surface" />
@@ -44,11 +47,10 @@ export function PublicHomeHero() {
         <div className="mx-auto max-w-3xl text-center">
           <p className="section-eyebrow mb-4">Sem cadastro · Contato direto · Avaliações reais</p>
           <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-            Encontre a oficina ou estética ideal perto de você
+            Encontre o negócio ideal perto de você
           </h1>
           <p className="mt-5 text-lg text-muted-foreground">
-            Compare perfis, veja fotos, catálogo de serviços e fale no WhatsApp — como um guia
-            automotivo feito para o motorista brasileiro.
+            Oficinas, lojas, salões, restaurantes e milhares de empreendimentos — compare perfis e fale direto pelo {APP_NAME}.
           </p>
 
           <form
@@ -63,21 +65,45 @@ export function PublicHomeHero() {
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Cidade, bairro ou nome da oficina..."
+                placeholder="Cidade, bairro ou nome do negócio..."
                 className="input-field w-full !border-0 !bg-transparent !pl-10 !shadow-none"
               />
             </div>
             <select
-              value={type}
-              onChange={(e) => setType(e.target.value as WorkshopType | "")}
+              value={segment}
+              onChange={(e) => {
+                setSegment(e.target.value as BusinessVertical | "");
+                setSubFilter("");
+              }}
               className="input-field sm:max-w-[180px]"
             >
-              {typeOptions.map((o) => (
-                <option key={o.value || "all"} value={o.value}>
-                  {o.label}
+              <option value="">Todos os segmentos</option>
+              {VERTICAL_LIST.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.name}
                 </option>
               ))}
             </select>
+            {segmentConfig && (
+              <select
+                value={subFilter}
+                onChange={(e) => setSubFilter(e.target.value)}
+                className="input-field sm:max-w-[180px]"
+              >
+                <option value="">Todos os tipos</option>
+                {segmentConfig.usesAutomotiveTypes
+                  ? (Object.entries(workshopTypeLabels) as [WorkshopType, string][]).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))
+                  : segmentConfig.categories.map((c) => (
+                      <option key={c.value} value={c.value}>
+                        {c.label}
+                      </option>
+                    ))}
+              </select>
+            )}
             <button
               type="submit"
               className="rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-accent-foreground transition hover:opacity-90"
@@ -87,12 +113,26 @@ export function PublicHomeHero() {
           </form>
 
           <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-sm">
-            <span className="text-muted">Populares:</span>
+            <span className="text-muted">Segmentos:</span>
+            {VERTICAL_LIST.slice(0, 6).map((v) => (
+              <button
+                key={v.id}
+                type="button"
+                onClick={() => router.push(directoryUrl({ segmento: v.id }))}
+                className="rounded-full border border-border bg-surface px-3 py-1 text-muted-foreground transition hover:border-accent hover:text-accent"
+              >
+                {v.defaultEmoji} {v.name}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-sm">
+            <span className="text-muted">Cidades:</span>
             {popularCities.map((city) => (
               <button
                 key={city}
                 type="button"
-                onClick={() => router.push(`/oficinas?q=${encodeURIComponent(city)}`)}
+                onClick={() => router.push(directoryUrl({ q: city }))}
                 className="rounded-full border border-border bg-surface px-3 py-1 text-muted-foreground transition hover:border-accent hover:text-accent"
               >
                 {city}
@@ -107,9 +147,9 @@ export function PublicHomeHero() {
 
 export function PublicTrustBar() {
   const items = [
-    { icon: "star" as const, title: "Avaliações verificadas", desc: "Só quem fez serviço avalia" },
+    { icon: "star" as const, title: "Avaliações verificadas", desc: "Só quem contratou avalia" },
     { icon: "calendar" as const, title: "Agenda online", desc: "Solicite horário sem login" },
-    { icon: "sparkles" as const, title: "Estética e mecânica", desc: "Carros, motos e mistas" },
+    { icon: "sparkles" as const, title: "Multi-segmento", desc: "Automotivo, beleza, comércio e mais" },
     { icon: "credit-card" as const, title: "Preços de referência", desc: "Catálogo transparente" },
   ];
 
@@ -134,7 +174,7 @@ export function PublicTrustBar() {
 
 export function PublicHowItWorks() {
   const steps = [
-    { n: "1", title: "Busque", desc: "Filtre por cidade, tipo ou serviço." },
+    { n: "1", title: "Busque", desc: "Filtre por cidade, segmento ou serviço." },
     { n: "2", title: "Compare", desc: "Veja fotos, notas, catálogo e horários." },
     { n: "3", title: "Contato", desc: "WhatsApp, agenda ou ligação — sem criar conta." },
   ];

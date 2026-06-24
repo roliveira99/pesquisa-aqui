@@ -3,12 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { APP_NAME, CONTACT_PHONE, SUPPORT_EMAIL } from "@/lib/brand";
+import { getPlatformTerminology, isBusinessProfilePath } from "@/lib/platform-routes";
 import { Logo } from "@/components/ui/Logo";
+
+const terms = getPlatformTerminology();
 
 export function Footer() {
   const pathname = usePathname();
   const isDashboard = pathname.startsWith("/dashboard");
-  const isWorkshopProfile = /^\/oficinas\/[^/]+$/.test(pathname);
+  const isWorkshopProfile = isBusinessProfilePath(pathname);
 
   if (isDashboard || isWorkshopProfile) return null;
 
@@ -19,8 +22,8 @@ export function Footer() {
           <div className="sm:col-span-2">
             <Logo />
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted">
-              Plataforma completa para conectar clientes a oficinas mecânicas,
-              estética automotiva e gestão profissional do seu negócio.
+              Plataforma para conectar clientes a empresas e comércios locais — oficinas, lojas,
+              salões, restaurantes e qualquer empreendimento.
             </p>
           </div>
 
@@ -28,8 +31,8 @@ export function Footer() {
             <h3 className="text-sm font-semibold text-foreground">Plataforma</h3>
             <ul className="mt-4 space-y-2.5 text-sm text-muted">
               <li>
-                <Link href="/oficinas" className="hover:text-accent">
-                  Buscar oficinas
+                <Link href={terms.directoryPath} className="hover:text-accent">
+                  Buscar negócios
                 </Link>
               </li>
               <li>
@@ -57,7 +60,7 @@ export function Footer() {
 
         <div className="mt-10 flex flex-col items-center justify-between gap-2 border-t border-border pt-6 text-xs text-muted sm:flex-row">
           <span>© {new Date().getFullYear()} {APP_NAME}. Todos os direitos reservados.</span>
-          <span>Desenvolvido para o setor automotivo brasileiro</span>
+          <span>Desenvolvido para empreendedores brasileiros</span>
         </div>
       </div>
     </footer>

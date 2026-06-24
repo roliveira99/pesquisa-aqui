@@ -1,3 +1,4 @@
+import { getVerticalConfig } from "@/lib/verticals/config";
 import type { Prisma, UserRole, WorkshopType } from "@prisma/client";
 import { hashPassword } from "@/lib/db/auth";
 import { prisma } from "@/lib/db/prisma";
@@ -24,6 +25,8 @@ export async function listAdminWorkshops(): Promise<Workshop[]> {
 
 export async function createWorkshop(input: {
   name: string;
+  vertical?: import("@prisma/client").BusinessVertical;
+  category?: string;
   type: WorkshopType;
   description: string;
   address: string;
@@ -45,8 +48,11 @@ export async function createWorkshop(input: {
   const email = input.email?.trim().toLowerCase();
 
   if (!name || !description || !address || !city || !state || !phone || !email) {
-    return { ok: false, error: "Preencha todos os campos obrigatórios da oficina." };
+    return { ok: false, error: "Preencha todos os campos obrigatórios do negócio." };
   }
+
+  const vertical = input.vertical ?? "automotive";
+  const verticalConfig = getVerticalConfig(vertical);
 
   if (state.length !== 2) {
     return { ok: false, error: "UF deve ter 2 letras (ex.: SP)." };
@@ -80,6 +86,8 @@ export async function createWorkshop(input: {
           id,
           name,
           slug,
+          vertical,
+          category: input.category?.trim() || null,
           type: input.type,
           description,
           tagline: input.tagline?.trim() || null,
@@ -90,7 +98,7 @@ export async function createWorkshop(input: {
           whatsapp: (input.whatsapp ?? phone).trim(),
           email,
           openingHours: input.openingHours?.trim() || "Seg–Sex 8h–18h",
-          image: "🔧",
+          image: verticalConfig.defaultEmoji,
           rating: 0,
           reviewCount: 0,
           services: [] as Prisma.InputJsonValue,

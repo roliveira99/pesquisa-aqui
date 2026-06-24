@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { businessProfilePath } from "@/lib/platform-routes";
 import type { Workshop } from "@/types/workshop";
 import type { SponsorshipTier } from "@/types/platform-admin";
 import { sponsorshipTierBadgeClass } from "@/types/platform-admin";
@@ -23,7 +24,7 @@ export function WorkshopCard({ workshop, sponsorshipTier, sponsorshipLabel }: Wo
 
   return (
     <Link
-      href={`/oficinas/${workshop.slug}`}
+      href={businessProfilePath(workshop.slug)}
       className={`group flex flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
         isSponsored ? "ring-2 ring-amber-400/50" : ""
       }`}

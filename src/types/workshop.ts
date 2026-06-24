@@ -1,3 +1,5 @@
+import type { BusinessVertical } from "@/types/vertical";
+
 export interface CatalogItem {
   id: string;
   name: string;
@@ -32,6 +34,8 @@ export interface Workshop {
   id: string;
   name: string;
   slug: string;
+  vertical?: BusinessVertical;
+  category?: string | null;
   type: WorkshopType;
   description: string;
   tagline?: string;

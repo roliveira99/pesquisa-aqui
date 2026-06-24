@@ -4,10 +4,19 @@ import { isDatabaseReachable, prisma } from "@/lib/db/prisma";
 import type { Workshop } from "@/types/workshop";
 import type { Prisma } from "@prisma/client";
 
-export async function listWorkshops(): Promise<Workshop[]> {
-  if (!(await isDatabaseReachable())) return staticWorkshops;
+export async function listWorkshops(filter?: {
+  vertical?: import("@/types/vertical").BusinessVertical;
+}): Promise<Workshop[]> {
+  if (!(await isDatabaseReachable())) {
+    const list = staticWorkshops;
+    if (!filter?.vertical) return list;
+    return list.filter((w) => (w.vertical ?? "automotive") === filter.vertical);
+  }
 
-  const rows = await prisma.workshop.findMany({ orderBy: { name: "asc" } });
+  const rows = await prisma.workshop.findMany({
+    where: filter?.vertical ? { vertical: filter.vertical } : undefined,
+    orderBy: { name: "asc" },
+  });
   return rows.map(mapDbWorkshop);
 }
 

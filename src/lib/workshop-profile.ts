@@ -47,6 +47,8 @@ export function enrichWorkshop<T extends Partial<Workshop> & Pick<Workshop, "id"
   const whatsapp = w.whatsapp ?? w.phone;
   return {
     ...w,
+    vertical: w.vertical ?? "automotive",
+    category: w.category ?? null,
     whatsapp,
     tagline: w.tagline ?? getWorkshopTagline(w.id, w.description),
     coverImage: w.coverImage ?? getWorkshopCoverImage(w.id, w.type),

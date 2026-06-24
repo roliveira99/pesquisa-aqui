@@ -1,4 +1,5 @@
 import { APP_NAME } from "@/lib/brand";
+import { getPlatformTerminology } from "@/lib/platform-routes";
 import Link from "next/link";
 import { CuriosityCard } from "@/components/curiosities/CuriosityCard";
 import {
@@ -40,6 +41,8 @@ export default async function HomePage() {
     tiers[w.id] = await getSponsorshipTier(w.id);
   }
 
+  const terms = getPlatformTerminology();
+
   return (
     <>
       <SiteAnnouncements placement="home_topo" className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8" />
@@ -49,11 +52,11 @@ export default async function HomePage() {
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <SectionHeader
           eyebrow="Em destaque"
-          title="Oficinas e estéticas perto de você"
-          description={`${workshops.length} estabelecimentos em ${cities.size} cidades — patrocinadas aparecem primeiro.`}
+          title={terms.homeFeaturedTitle}
+          description={`${workshops.length} estabelecimentos em ${cities.size} cidades — patrocinados aparecem primeiro.`}
           action={
             <Link
-              href="/oficinas"
+              href={terms.directoryPath}
               className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:text-accent-hover"
             >
               Ver diretório completo
@@ -124,11 +127,10 @@ export default async function HomePage() {
             <div className="p-8 sm:p-10 lg:p-12">
               <p className="section-eyebrow mb-3">Para gestores</p>
               <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                Sua oficina com perfil profissional na plataforma
+                {terms.homeManagerTitle}
               </h2>
               <p className="mt-4 text-sm leading-relaxed text-muted sm:text-base">
-                Catálogo, avaliações, agenda e notas ao cliente — tudo integrado ao painel
-                gerencial.
+                {terms.homeManagerDescription}
               </p>
               <div className="mt-8">
                 <ButtonLink href="/login" variant="primary">

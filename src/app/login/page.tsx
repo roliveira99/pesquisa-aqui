@@ -43,7 +43,7 @@ export default function LoginPage() {
           <Logo variant="system" />
           <div>
             <h1 className="text-3xl font-semibold leading-tight text-[var(--dash-sidebar-active-text)]">
-              Gestão profissional para oficinas automotivas
+              Gestão profissional para qualquer empreendimento
             </h1>
             <p className="mt-4 max-w-md text-sm leading-relaxed text-[var(--dash-sidebar-text)]">
               Acesse o painel conforme seu perfil. Cada usuário visualiza apenas

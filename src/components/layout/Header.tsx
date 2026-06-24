@@ -9,9 +9,13 @@ import { ButtonLink } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
+import { getPlatformTerminology, isBusinessProfilePath } from "@/lib/platform-routes";
+
+const terms = getPlatformTerminology();
+
 const navLinks = [
   { href: "/", label: "Início" },
-  { href: "/oficinas", label: "Oficinas" },
+  { href: terms.directoryPath, label: terms.directoryNav },
   { href: "/classificados", label: "Classificados" },
   { href: "/curiosidades", label: "Notícias" },
 ];
@@ -22,7 +26,7 @@ export function Header() {
   const [mounted, setMounted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const isDashboard = pathname.startsWith("/dashboard");
-  const isWorkshopProfile = /^\/oficinas\/[^/]+$/.test(pathname);
+  const isWorkshopProfile = isBusinessProfilePath(pathname);
 
   useEffect(() => setMounted(true), []);
   useEffect(() => setMenuOpen(false), [pathname]);

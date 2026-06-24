@@ -9,6 +9,8 @@ export function mapDbWorkshop(row: DbWorkshop): Workshop {
     id: row.id,
     name: row.name,
     slug: row.slug,
+    vertical: (row.vertical ?? "automotive") as Workshop["vertical"],
+    category: row.category ?? null,
     type: row.type,
     description: row.description,
     tagline: row.tagline ?? undefined,

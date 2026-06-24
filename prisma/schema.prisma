@@ -21,6 +21,18 @@ enum WorkshopType {
   estetica
 }
 
+enum BusinessVertical {
+  automotive
+  beauty
+  food
+  retail
+  health
+  services
+  education
+  pets
+  other
+}
+
 enum AgendaStatus {
   pendente
   aprovado
@@ -101,6 +113,8 @@ model Workshop {
   id              String           @id
   name            String
   slug            String           @unique
+  vertical        BusinessVertical @default(automotive)
+  category        String?
   type            WorkshopType
   description     String
   tagline         String?

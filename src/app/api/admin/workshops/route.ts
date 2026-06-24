@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { createWorkshop, deleteWorkshop, listAdminWorkshops } from "@/lib/db/admin";
 import { setWorkshopBlocked } from "@/lib/db/workshop-team";
 import { getRequestUser, userHasPermission } from "@/lib/db/request-auth";
+import type { BusinessVertical } from "@/types/vertical";
+import { getVerticalConfig } from "@/lib/verticals/config";
 import type { WorkshopType } from "@prisma/client";
+import type { BusinessVertical as PrismaBusinessVertical } from "@prisma/client";
 
 export async function GET() {
   const user = await getRequestUser();
@@ -30,6 +33,8 @@ export async function POST(request: Request) {
   try {
     const result = await createWorkshop({
       name: body.name as string,
+      vertical: (body.vertical as PrismaBusinessVertical) ?? "automotive",
+      category: body.category as string | undefined,
       type: body.type as WorkshopType,
       description: body.description as string,
       address: body.address as string,

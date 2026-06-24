@@ -17,6 +17,8 @@ async function main() {
         id: workshop.id,
         name: workshop.name,
         slug: workshop.slug,
+        vertical: workshop.vertical ?? "automotive",
+        category: workshop.category ?? null,
         type: workshop.type,
         description: workshop.description,
         tagline: workshop.tagline ?? null,

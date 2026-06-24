@@ -6,7 +6,9 @@ import { WorkshopCard } from "@/components/workshop/WorkshopCard";
 import { Icon } from "@/components/ui/Icon";
 import { fetchReviewStatsBySlug } from "@/lib/api/reviews-client";
 import { getWorkshopOpenStatus } from "@/lib/workshop-hours";
+import { getVerticalConfig } from "@/lib/verticals/config";
 import { workshopTypeLabels } from "@/lib/labels";
+import type { BusinessVertical } from "@/types/vertical";
 import { sponsorshipTierLabels } from "@/types/platform-admin";
 import type { SponsorshipTier } from "@/types/platform-admin";
 import type { Workshop } from "@/types/workshop";
@@ -46,14 +48,19 @@ type SortMode = "destaque" | "avaliacao" | "nome";
 interface WorkshopDirectoryProps {
   workshops: Workshop[];
   tiers?: Record<string, SponsorshipTier>;
+  vertical?: BusinessVertical;
 }
 
-export function WorkshopDirectory({ workshops, tiers }: WorkshopDirectoryProps) {
+export function WorkshopDirectory({ workshops, tiers, vertical }: WorkshopDirectoryProps) {
   const searchParams = useSearchParams();
   const initialQ = searchParams.get("q") ?? "";
   const initialType = searchParams.get("tipo") ?? "todas";
+  const initialCategory = searchParams.get("categoria") ?? "todas";
+  const verticalConfig = getVerticalConfig(vertical ?? null);
 
-  const [filter, setFilter] = useState(initialType);
+  const [filter, setFilter] = useState(
+    verticalConfig.usesAutomotiveTypes ? initialType : initialCategory
+  );
   const [search, setSearch] = useState(initialQ);
   const [serviceFilter, setServiceFilter] = useState("");
   const [sort, setSort] = useState<SortMode>("destaque");
@@ -61,8 +68,8 @@ export function WorkshopDirectory({ workshops, tiers }: WorkshopDirectoryProps) 
 
   useEffect(() => {
     setSearch(initialQ);
-    setFilter(initialType);
-  }, [initialQ, initialType]);
+    setFilter(verticalConfig.usesAutomotiveTypes ? initialType : initialCategory);
+  }, [initialQ, initialType, initialCategory, verticalConfig.usesAutomotiveTypes]);
 
   useEffect(() => {
     if (sort !== "avaliacao") return;
@@ -89,7 +96,9 @@ export function WorkshopDirectory({ workshops, tiers }: WorkshopDirectoryProps) 
   const filtered = useMemo(() => {
     let list = workshops.filter((w) => {
       const q = search.toLowerCase();
-      const matchesType = filter === "todas" || w.type === filter;
+      const matchesType = verticalConfig.usesAutomotiveTypes
+        ? filter === "todas" || w.type === filter
+        : filter === "todas" || w.category === filter;
       const matchesSearch =
         q === "" ||
         w.name.toLowerCase().includes(q) ||
@@ -115,15 +124,20 @@ export function WorkshopDirectory({ workshops, tiers }: WorkshopDirectoryProps) 
     }
 
     return list;
-  }, [workshops, filter, search, serviceFilter, sort, ratingMap]);
+  }, [workshops, filter, search, serviceFilter, sort, ratingMap, verticalConfig.usesAutomotiveTypes]);
 
-  const filters = [
-    { value: "todas", label: "Todas" },
-    { value: "carros", label: workshopTypeLabels.carros },
-    { value: "motos", label: workshopTypeLabels.motos },
-    { value: "mista", label: workshopTypeLabels.mista },
-    { value: "estetica", label: workshopTypeLabels.estetica },
-  ];
+  const filters = verticalConfig.usesAutomotiveTypes
+    ? [
+        { value: "todas", label: "Todas" },
+        { value: "carros", label: workshopTypeLabels.carros },
+        { value: "motos", label: workshopTypeLabels.motos },
+        { value: "mista", label: workshopTypeLabels.mista },
+        { value: "estetica", label: workshopTypeLabels.estetica },
+      ]
+    : [
+        { value: "todas", label: "Todas" },
+        ...verticalConfig.categories.map((c) => ({ value: c.value, label: c.label })),
+      ];
 
   const openCount = filtered.filter(
     (w) => getWorkshopOpenStatus(w.openingHours) === "open"
@@ -136,7 +150,7 @@ export function WorkshopDirectory({ workshops, tiers }: WorkshopDirectoryProps) 
         {openCount > 0 && (
           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-emerald-700 dark:text-emerald-400">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-            {openCount} abertas agora
+            {openCount} abertos agora
           </span>
         )}
       </div>

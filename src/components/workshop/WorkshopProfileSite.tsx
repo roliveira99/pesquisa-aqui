@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { APP_NAME, whatsappWorkshopMessage } from "@/lib/brand";
+import { DIRECTORY_PATH, getBusinessSegmentLabel } from "@/lib/platform-routes";
 import Image from "next/image";
 import Link from "next/link";
 import { AgendaRequestForm } from "@/components/workshop/AgendaRequestForm";
@@ -52,12 +53,12 @@ export function WorkshopProfileSite({ workshop, sponsorshipTier = "none" }: Work
     <div className="min-h-screen bg-background pb-20 lg:pb-0">
       <div className="border-b border-border bg-surface">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-2 text-xs text-muted sm:px-6">
-          <Link href="/oficinas" className="inline-flex items-center gap-1 hover:text-accent">
+          <Link href={DIRECTORY_PATH} className="inline-flex items-center gap-1 hover:text-accent">
             <Icon name="arrow-right" className="h-3.5 w-3.5 rotate-180" />
             {APP_NAME}
           </Link>
           <span className="hidden sm:inline">
-            {workshopTypeLabels[workshop.type]}
+            {getBusinessSegmentLabel(workshop)}
           </span>
           <WorkshopOpenBadge openingHours={workshop.openingHours} />
         </div>

@@ -5,12 +5,14 @@ import Link from "next/link";
 import { ActionButton, DataTable } from "@/components/dashboard/DashboardUI";
 import { PageHeader } from "@/components/dashboard/DashboardUI";
 import { PermissionGuard } from "@/components/dashboard/PermissionGuard";
-import { WorkshopTypeBadge } from "@/components/workshop/WorkshopTypeBadge";
 import {
   apiCreateWorkshop,
   apiDeleteWorkshop,
   fetchAdminWorkshops,
 } from "@/lib/api/admin-client";
+import { businessProfilePath } from "@/lib/platform-routes";
+import { getVerticalConfig, VERTICAL_LIST } from "@/lib/verticals/config";
+import type { BusinessVertical } from "@/types/vertical";
 import type { Workshop, WorkshopType } from "@/types/workshop";
 
 const types: { value: WorkshopType; label: string }[] = [
@@ -27,6 +29,8 @@ export default function AdminOficinasPage() {
   const [error, setError] = useState("");
   const [form, setForm] = useState({
     name: "",
+    vertical: "automotive" as BusinessVertical,
+    category: "",
     type: "carros" as WorkshopType,
     description: "",
     tagline: "",
@@ -63,6 +67,8 @@ export default function AdminOficinasPage() {
 
     const payload: Record<string, unknown> = {
       name: form.name,
+      vertical: form.vertical,
+      category: form.category || undefined,
       type: form.type,
       description: form.description,
       tagline: form.tagline || undefined,
@@ -88,7 +94,7 @@ export default function AdminOficinasPage() {
     }
 
     setMessage(
-      `Oficina "${result.workshop.name}" cadastrada. Perfil público: /oficinas/${result.workshop.slug}${
+      `Negócio "${result.workshop.name}" cadastrado. Perfil: ${businessProfilePath(result.workshop.slug)}${
         result.ownerEmail ? ` — Dono: ${result.ownerEmail}` : ""
       }`
     );
@@ -133,14 +139,16 @@ export default function AdminOficinasPage() {
     await refresh();
   }
 
+  const verticalConfig = getVerticalConfig(form.vertical);
+
   return (
     <PermissionGuard permissions={["admin.visualizar_oficinas", "admin.aprovar_oficinas"]}>
       <PageHeader
-        title="Gestão de oficinas"
-        description="Cadastre oficinas reais na plataforma e libere o perfil público"
+        title="Gestão de negócios"
+        description="Cadastre empreendimentos de qualquer segmento na plataforma"
         actions={
           <ActionButton
-            label={showForm ? "Fechar formulário" : "+ Nova oficina"}
+            label={showForm ? "Fechar formulário" : "+ Novo negócio"}
             variant="primary"
             onClick={() => {
               setShowForm(!showForm);
@@ -155,14 +163,40 @@ export default function AdminOficinasPage() {
 
       {showForm && (
         <form onSubmit={handleSubmit} className="card mb-8 space-y-5 p-5">
-          <h2 className="font-semibold">Cadastrar oficina</h2>
+          <h2 className="font-semibold">Cadastrar negócio</h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <input required className="input-field" placeholder="Nome da oficina *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-            <select required className="input-field" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as WorkshopType })}>
-              {types.map((t) => (
-                <option key={t.value} value={t.value}>{t.label}</option>
+            <input required className="input-field" placeholder="Nome do negócio *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <select
+              required
+              className="input-field"
+              value={form.vertical}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  vertical: e.target.value as BusinessVertical,
+                  category: "",
+                  type: "carros",
+                })
+              }
+            >
+              {VERTICAL_LIST.map((v) => (
+                <option key={v.id} value={v.id}>{v.name}</option>
               ))}
             </select>
+            {verticalConfig.usesAutomotiveTypes ? (
+              <select required className="input-field" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as WorkshopType })}>
+                {types.map((t) => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
+              </select>
+            ) : (
+              <select required className="input-field" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+                <option value="">Selecione a categoria *</option>
+                {verticalConfig.categories.map((c) => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
+            )}
             <input required className="input-field" placeholder="E-mail de contato *" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
             <input required className="input-field sm:col-span-2 lg:col-span-3" placeholder="Descrição *" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
             <input className="input-field sm:col-span-2" placeholder="Frase de destaque (opcional)" value={form.tagline} onChange={(e) => setForm({ ...form, tagline: e.target.value })} />
@@ -176,7 +210,7 @@ export default function AdminOficinasPage() {
 
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={form.createOwner} onChange={(e) => setForm({ ...form, createOwner: e.target.checked })} />
-            Criar conta do dono junto com a oficina
+            Criar conta do dono junto com o negócio
           </label>
 
           {form.createOwner && (
@@ -188,27 +222,27 @@ export default function AdminOficinasPage() {
           )}
 
           <button type="submit" className="btn btn-primary">
-            Cadastrar oficina
+            Cadastrar negócio
           </button>
         </form>
       )}
 
       {workshops.length === 0 ? (
-        <p className="text-sm text-muted">Nenhuma oficina cadastrada. Use o botão acima para adicionar a primeira.</p>
+        <p className="text-sm text-muted">Nenhum negócio cadastrado. Use o botão acima para adicionar o primeiro.</p>
       ) : (
         <DataTable
-          headers={["Oficina", "Tipo", "Cidade", "Status", "Perfil público", "Ações"]}
+          headers={["Negócio", "Segmento", "Cidade", "Status", "Perfil público", "Ações"]}
           rows={workshops.map((w) => [
             w.name,
-            <WorkshopTypeBadge key={`t-${w.id}`} type={w.type} variant="system" />,
+            getVerticalConfig(w.vertical).name,
             `${w.city}/${w.state}`,
             w.blocked ? (
-              <span key={`b-${w.id}`} className="text-danger text-xs font-medium">Bloqueada</span>
+              <span key={`b-${w.id}`} className="text-danger text-xs font-medium">Bloqueado</span>
             ) : (
-              <span key={`ok-${w.id}`} className="dash-badge">Ativa</span>
+              <span key={`ok-${w.id}`} className="dash-badge">Ativo</span>
             ),
-            <Link key={`l-${w.id}`} href={`/oficinas/${w.slug}`} className="dash-link" target="_blank">
-              /oficinas/{w.slug}
+            <Link key={`l-${w.id}`} href={businessProfilePath(w.slug)} className="dash-link" target="_blank">
+              {businessProfilePath(w.slug)}
             </Link>,
             <div key={`act-${w.id}`} className="flex flex-wrap gap-1">
               <ActionButton

@@ -1,8 +1,8 @@
 export const APP_NAME = "Pesquisa Aqui";
 export const APP_SHORT = "PA";
-export const APP_TAGLINE = "Encontre oficinas perto de você";
+export const APP_TAGLINE = "Encontre negócios perto de você";
 export const APP_META_DESCRIPTION =
-  "Plataforma para clientes encontrarem oficinas mecânicas, estética automotiva e motos, com conteúdo do setor e dashboard gerencial para gestores.";
+  "Plataforma para clientes encontrarem empresas e comércios locais — oficinas, lojas, salões, restaurantes e muito mais — com avaliações e gestão integrada.";
 
 export const SUPPORT_EMAIL = "contato@pesquisaaqui.com.br";
 export const CONTACT_PHONE = "(11) 4000-0000";
