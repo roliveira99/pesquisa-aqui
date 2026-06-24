@@ -1,3 +1,5 @@
+import { getCategoryLabel } from "@/lib/article-categories";
+
 export function slugifyTitle(title: string): string {
   return title
     .normalize("NFD")
@@ -30,12 +32,5 @@ export function formatArticleDateShort(iso: string): string {
 }
 
 export function formatCategoryLabel(category: string): string {
-  const labels: Record<string, string> = {
-    manutencao: "Manutenção",
-    dicas: "Dicas",
-    mercado: "Mercado",
-    tecnologia: "Tecnologia",
-    geral: "Geral",
-  };
-  return labels[category.toLowerCase()] ?? category.charAt(0).toUpperCase() + category.slice(1);
+  return getCategoryLabel(category);
 }

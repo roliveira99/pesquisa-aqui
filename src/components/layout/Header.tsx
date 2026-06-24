@@ -14,10 +14,10 @@ import { getPlatformTerminology, isBusinessProfilePath } from "@/lib/platform-ro
 const terms = getPlatformTerminology();
 
 const navLinks = [
+  { href: "/curiosidades", label: "Jornal" },
   { href: "/", label: "Início" },
   { href: terms.directoryPath, label: terms.directoryNav },
   { href: "/classificados", label: "Classificados" },
-  { href: "/curiosidades", label: "Jornal" },
 ];
 
 export function Header() {

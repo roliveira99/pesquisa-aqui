@@ -342,8 +342,10 @@ model SiteArticle {
   summary   String
   content   String
   category  String   @default("geral")
+  city      String?
   icon      String   @default("car")
   imageUrl  String?
+  featured  Boolean  @default(false)
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

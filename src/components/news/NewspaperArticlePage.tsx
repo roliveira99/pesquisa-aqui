@@ -37,6 +37,7 @@ export function NewspaperArticlePage({
           <span className="rounded-sm bg-accent-soft px-2 py-0.5 font-semibold text-accent">
             {formatCategoryLabel(article.category)}
           </span>
+          {article.city && <span>{article.city}</span>}
           <time dateTime={article.createdAt}>{formatArticleDate(article.createdAt)}</time>
         </div>
         <h1 className="newspaper-headline text-3xl font-bold leading-tight text-foreground sm:text-4xl lg:text-5xl">

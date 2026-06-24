@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ActionButton, DataTable, PageHeader, TabPanel } from "@/components/dashboard/DashboardUI";
 import { PermissionGuard } from "@/components/dashboard/PermissionGuard";
+import { JournalAdminPanel } from "@/components/admin/JournalAdminPanel";
 import {
   apiAddAnnouncement,
   apiDeleteAnnouncement,
@@ -24,21 +25,10 @@ const styles: { value: AnnouncementStyle; label: string }[] = [
   { value: "alerta", label: "Alerta" },
 ];
 
-interface ArticleRow {
-  id: string;
-  title: string;
-  summary: string;
-  content: string;
-  category: string;
-  active: boolean;
-}
-
 export default function AdminAnunciosPage() {
-  const [tab, setTab] = useState("banners");
+  const [tab, setTab] = useState("jornal");
   const [items, setItems] = useState<SiteAnnouncement[]>([]);
-  const [articles, setArticles] = useState<ArticleRow[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [showArticleForm, setShowArticleForm] = useState(false);
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
   const [placement, setPlacement] = useState<AnnouncementPlacement>("site_geral");
@@ -47,23 +37,15 @@ export default function AdminAnunciosPage() {
   const [linkUrl, setLinkUrl] = useState("");
   const [linkLabel, setLinkLabel] = useState("");
   const [mediaUrl, setMediaUrl] = useState("");
-  const [articleTitle, setArticleTitle] = useState("");
-  const [articleSummary, setArticleSummary] = useState("");
-  const [articleContent, setArticleContent] = useState("");
   const [feedback, setFeedback] = useState("");
 
-  const refresh = useCallback(async () => {
+  const refreshBanners = useCallback(async () => {
     setItems(await apiFetchAllAnnouncements());
-    const res = await fetch("/api/articles?admin=1");
-    if (res.ok) {
-      const data = (await res.json()) as { articles: ArticleRow[] };
-      setArticles(data.articles);
-    }
   }, []);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    void refreshBanners();
+  }, [refreshBanners]);
 
   async function handleCreateAnnouncement(e: React.FormEvent) {
     e.preventDefault();
@@ -75,30 +57,15 @@ export default function AdminAnunciosPage() {
     setMediaUrl("");
     setShowForm(false);
     setFeedback(displayType === "modal" ? "Pop-up publicado no site." : "Banner publicado.");
-    await refresh();
-  }
-
-  async function handleCreateArticle(e: React.FormEvent) {
-    e.preventDefault();
-    await fetch("/api/articles", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "upsert",
-        title: articleTitle,
-        summary: articleSummary,
-        content: articleContent,
-      }),
-    });
-    setArticleTitle("");
-    setArticleSummary("");
-    setArticleContent("");
-    setShowArticleForm(false);
-    setFeedback("Notícia publicada.");
-    await refresh();
+    await refreshBanners();
   }
 
   const tabs = [
+    {
+      id: "jornal",
+      label: "Jornal / Manchetes",
+      content: <JournalAdminPanel onFeedback={setFeedback} />,
+    },
     {
       id: "banners",
       label: "Banners e pop-ups",
@@ -143,48 +110,9 @@ export default function AdminAnunciosPage() {
               placements.find((p) => p.value === a.placement)?.label ?? a.placement,
               a.active ? "Ativo" : "Inativo",
               <div key={a.id} className="flex gap-2">
-                <ActionButton label={a.active ? "Desativar" : "Ativar"} onClick={() => void apiToggleAnnouncement(a.id, !a.active).then(refresh)} />
-                <ActionButton label="Excluir" variant="danger" onClick={() => void apiDeleteAnnouncement(a.id).then(refresh)} />
+                <ActionButton label={a.active ? "Desativar" : "Ativar"} onClick={() => void apiToggleAnnouncement(a.id, !a.active).then(refreshBanners)} />
+                <ActionButton label="Excluir" variant="danger" onClick={() => void apiDeleteAnnouncement(a.id).then(refreshBanners)} />
               </div>,
-            ])}
-          />
-        </div>
-      ),
-    },
-    {
-      id: "noticias",
-      label: "Notícias",
-      content: (
-        <div>
-          <div className="mb-4 flex justify-end">
-            <ActionButton label={showArticleForm ? "Cancelar" : "+ Nova notícia"} variant="primary" onClick={() => setShowArticleForm(!showArticleForm)} />
-          </div>
-          {showArticleForm && (
-            <form onSubmit={handleCreateArticle} className="card mb-6 space-y-3 p-5">
-              <input required value={articleTitle} onChange={(e) => setArticleTitle(e.target.value)} className="input-field" placeholder="Título" />
-              <input required value={articleSummary} onChange={(e) => setArticleSummary(e.target.value)} className="input-field" placeholder="Resumo" />
-              <textarea required value={articleContent} onChange={(e) => setArticleContent(e.target.value)} className="input-field min-h-[120px]" placeholder="Conteúdo completo" />
-              <button type="submit" className="btn btn-primary">Publicar notícia</button>
-            </form>
-          )}
-          <DataTable
-            headers={["Título", "Resumo", "Status", "Ações"]}
-            rows={articles.map((a) => [
-              a.title,
-              a.summary.slice(0, 80),
-              a.active ? "Ativo" : "Inativo",
-              <ActionButton
-                key={a.id}
-                label="Excluir"
-                variant="danger"
-                onClick={() =>
-                  void fetch("/api/articles", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ action: "delete", id: a.id }),
-                  }).then(refresh)
-                }
-              />,
             ])}
           />
         </div>
@@ -196,7 +124,7 @@ export default function AdminAnunciosPage() {
     <PermissionGuard permissions={["admin.gerenciar_anuncios"]}>
       <PageHeader
         title="Conteúdo do site"
-        description="Somente banners e pop-ups criados aqui aparecem no site. Escolha o local exato de cada anúncio."
+        description="Gerencie o jornal (manchetes no topo do site) e banners promocionais."
       />
       {feedback && <p className="dash-alert mb-4">{feedback}</p>}
       <TabPanel tabs={tabs} activeTab={tab} onTabChange={setTab} />

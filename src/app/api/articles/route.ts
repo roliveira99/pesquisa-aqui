@@ -3,6 +3,7 @@ import {
   deleteArticle,
   listArticles,
   seedArticlesIfEmpty,
+  setArticleActive,
   upsertArticle,
 } from "@/lib/db/articles";
 import { getRequestUser, userHasPermission } from "@/lib/db/request-auth";
@@ -46,11 +47,17 @@ export async function POST(request: Request) {
         summary: body.summary as string,
         content: body.content as string,
         category: body.category as string | undefined,
+        city: body.city as string | null | undefined,
         icon: body.icon as string | undefined,
-        imageUrl: body.imageUrl as string | undefined,
+        imageUrl: body.imageUrl as string | null | undefined,
+        featured: body.featured as boolean | undefined,
         active: body.active as boolean | undefined,
       });
       return NextResponse.json({ ok: true, article });
+    }
+    case "toggle-active": {
+      const ok = await setArticleActive(body.id as string, body.active as boolean);
+      return NextResponse.json({ ok });
     }
     case "delete": {
       await deleteArticle(body.id as string);
