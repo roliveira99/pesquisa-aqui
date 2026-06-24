@@ -115,10 +115,18 @@ export async function apiSetFictionalActive(mechanicId: string, active: boolean)
   >;
 }
 
-export async function fetchCatalog(): Promise<{ catalog: import("@/types/workshop").WorkshopCatalog | null }> {
+export async function fetchCatalog(): Promise<{
+  catalog: import("@/types/workshop").WorkshopCatalog | null;
+  publicCatalog?: import("@/types/workshop").WorkshopCatalog;
+  slug?: string;
+}> {
   const res = await fetch("/api/catalog");
   if (!res.ok) throw new Error("Falha ao carregar catálogo.");
-  return res.json() as Promise<{ catalog: import("@/types/workshop").WorkshopCatalog | null }>;
+  return res.json() as Promise<{
+    catalog: import("@/types/workshop").WorkshopCatalog | null;
+    publicCatalog?: import("@/types/workshop").WorkshopCatalog;
+    slug?: string;
+  }>;
 }
 
 export async function saveCatalog(catalog: import("@/types/workshop").WorkshopCatalog) {

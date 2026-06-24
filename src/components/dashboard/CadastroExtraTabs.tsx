@@ -164,7 +164,7 @@ export function ServicosCadastroTab() {
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
-  const [publicVisible, setPublicVisible] = useState(false);
+  const [publicVisible, setPublicVisible] = useState(true);
 
   const refresh = useCallback(async () => {
     const res = await fetch("/api/catalog-items");
@@ -203,6 +203,7 @@ export function ServicosCadastroTab() {
     setShowForm(false);
     setName("");
     setPrice("");
+    setPublicVisible(true);
     await refresh();
   }
 

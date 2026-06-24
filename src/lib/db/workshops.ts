@@ -1,8 +1,17 @@
 import { workshops as staticWorkshops, getWorkshopBySlug as getStaticBySlug } from "@/data/workshops";
 import { mapDbWorkshop } from "@/lib/db/mappers";
 import { isDatabaseReachable, prisma } from "@/lib/db/prisma";
+import { resolveWorkshopPublicCatalog } from "@/lib/db/workshop-catalog";
 import type { Workshop } from "@/types/workshop";
 import type { Prisma } from "@prisma/client";
+
+async function withPublicCatalog(workshop: Workshop): Promise<Workshop> {
+  if (!(await isDatabaseReachable())) return workshop;
+  return {
+    ...workshop,
+    catalog: await resolveWorkshopPublicCatalog(workshop.id, workshop.catalog),
+  };
+}
 
 export async function listWorkshops(filter?: {
   vertical?: import("@/types/vertical").BusinessVertical;
@@ -17,7 +26,8 @@ export async function listWorkshops(filter?: {
     where: filter?.vertical ? { vertical: filter.vertical } : undefined,
     orderBy: { name: "asc" },
   });
-  return rows.map(mapDbWorkshop);
+  const workshops = rows.map(mapDbWorkshop);
+  return Promise.all(workshops.map(withPublicCatalog));
 }
 
 export async function getWorkshopBySlug(slug: string): Promise<Workshop | null> {
@@ -26,7 +36,8 @@ export async function getWorkshopBySlug(slug: string): Promise<Workshop | null> 
   }
 
   const row = await prisma.workshop.findUnique({ where: { slug } });
-  return row ? mapDbWorkshop(row) : null;
+  if (!row) return null;
+  return withPublicCatalog(mapDbWorkshop(row));
 }
 
 export async function getWorkshopById(id: string): Promise<Workshop | null> {
@@ -35,7 +46,8 @@ export async function getWorkshopById(id: string): Promise<Workshop | null> {
   }
 
   const row = await prisma.workshop.findUnique({ where: { id } });
-  return row ? mapDbWorkshop(row) : null;
+  if (!row) return null;
+  return withPublicCatalog(mapDbWorkshop(row));
 }
 
 export async function listWorkshopSlugs(): Promise<string[]> {

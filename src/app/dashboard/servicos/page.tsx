@@ -9,6 +9,7 @@ export default function ServicosOperacionaisPage() {
   const [items, setItems] = useState<CatalogItemRecord[]>([]);
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
+  const [publicVisible, setPublicVisible] = useState(true);
   const [showForm, setShowForm] = useState(false);
 
   const refresh = useCallback(async () => {
@@ -32,7 +33,7 @@ export default function ServicosOperacionaisPage() {
         kind: "servico",
         name,
         unitPrice: Number(price),
-        publicVisible: false,
+        publicVisible,
       }),
     });
     setName("");
@@ -59,6 +60,10 @@ export default function ServicosOperacionaisPage() {
         <form onSubmit={handleSubmit} className="card mb-6 grid gap-3 p-5 sm:grid-cols-3">
           <input required value={name} onChange={(e) => setName(e.target.value)} className="input-field sm:col-span-2" placeholder="Ex.: Mão de obra, Garantia estendida" />
           <input required type="number" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} className="input-field" placeholder="Valor (R$)" />
+          <label className="flex items-center gap-2 text-sm sm:col-span-3">
+            <input type="checkbox" checked={publicVisible} onChange={(e) => setPublicVisible(e.target.checked)} />
+            Exibir no catálogo público do perfil
+          </label>
           <button type="submit" className="btn btn-primary sm:col-span-3">Salvar serviço</button>
         </form>
       )}

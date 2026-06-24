@@ -5,36 +5,46 @@ import Link from "next/link";
 import { PermissionGuard } from "@/components/dashboard/PermissionGuard";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { PageHeader } from "@/components/dashboard/DashboardUI";
-import { getWorkshopById } from "@/data/workshops";
 import { fetchCatalog, saveCatalog } from "@/lib/api/crm-client";
+import { businessProfilePath } from "@/lib/platform-routes";
 import { formatCatalogPrice, newCatalogItem } from "@/lib/workshop-storage";
 import { PRICE_DISCLAIMER } from "@/lib/workshop-profile";
 import type { CatalogItem, WorkshopCatalog } from "@/types/workshop";
 
+const emptyCatalog: WorkshopCatalog = { services: [], parts: [] };
+
 export default function CatalogoPublicoPage() {
   const { user } = useAuth();
-  const workshopId = user?.workshopId ?? "1";
-  const workshop = getWorkshopById(workshopId);
-  const [catalog, setCatalog] = useState<WorkshopCatalog>(
-    workshop?.catalog ?? { services: [], parts: [] }
-  );
+  const [catalog, setCatalog] = useState<WorkshopCatalog>(emptyCatalog);
+  const [publicCatalog, setPublicCatalog] = useState<WorkshopCatalog>(emptyCatalog);
+  const [slug, setSlug] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
-      const base = workshop?.catalog ?? { services: [], parts: [] };
       try {
-        const { catalog: override } = await fetchCatalog();
-        setCatalog(override ?? base);
+        const data = await fetchCatalog();
+        setCatalog(data.catalog ?? emptyCatalog);
+        setPublicCatalog(data.publicCatalog ?? data.catalog ?? emptyCatalog);
+        setSlug(data.slug ?? null);
       } catch {
-        setCatalog(base);
+        setCatalog(emptyCatalog);
+        setPublicCatalog(emptyCatalog);
       }
     }
     void load();
-  }, [workshopId, workshop?.catalog]);
+  }, [user?.workshopId]);
 
   async function persist(next: WorkshopCatalog) {
     setCatalog(next);
     await saveCatalog(next);
+    try {
+      const data = await fetchCatalog();
+      setCatalog(data.catalog ?? next);
+      setPublicCatalog(data.publicCatalog ?? next);
+      setSlug(data.slug ?? slug);
+    } catch {
+      setPublicCatalog(next);
+    }
   }
 
   function addItem(type: "services" | "parts", name: string, price: number) {
@@ -59,31 +69,37 @@ export default function CatalogoPublicoPage() {
     });
   }
 
-  if (!workshop) {
-    return (
-      <PermissionGuard permissions={["owner.cadastro_servicos"]}>
-        <p className="text-muted">Oficina não encontrada.</p>
-      </PermissionGuard>
-    );
-  }
+  const profileHref = slug ? businessProfilePath(slug) : null;
+  const publicServiceCount = publicCatalog.services.length;
+  const publicPartCount = publicCatalog.parts.length;
 
   return (
     <PermissionGuard permissions={["owner.cadastro_servicos"]}>
       <PageHeader
         title="Catálogo do perfil público"
-        description="Serviços e peças exibidos no seu perfil — como um cardápio da oficina. Preços são referência e podem mudar no orçamento."
+        description="Serviços e peças exibidos no seu perfil — como um cardápio do negócio. Preços são referência e podem mudar no orçamento."
       />
 
-      <p className="dash-alert mb-6">
-        {PRICE_DISCLAIMER}
+      <p className="dash-alert mb-6">{PRICE_DISCLAIMER}</p>
+
+      <p className="mb-2 text-sm text-muted">
+        No perfil público hoje:{" "}
+        <strong>
+          {publicServiceCount} serviço{publicServiceCount === 1 ? "" : "s"} e {publicPartCount} peça
+          {publicPartCount === 1 ? "" : "s"}/produto{publicPartCount === 1 ? "" : "s"}
+        </strong>
+        . Itens cadastrados em <strong>Cadastros → Serviços</strong> com &quot;Exibir no catálogo público&quot; também
+        entram aqui automaticamente.
       </p>
 
-      <p className="mb-6 text-sm text-muted">
-        Visualize como o cliente vê:{" "}
-        <Link href={`/oficinas/${workshop.slug}`} className="dash-link font-medium">
-          {workshop.name} no site público
-        </Link>
-      </p>
+      {profileHref ? (
+        <p className="mb-6 text-sm text-muted">
+          Visualize como o cliente vê:{" "}
+          <Link href={profileHref} className="dash-link font-medium" target="_blank">
+            {user?.workshopName ?? "Perfil público"}
+          </Link>
+        </p>
+      ) : null}
 
       <CatalogEditor
         title="Serviços"
@@ -157,10 +173,7 @@ function CatalogEditor({
           className="input-field w-32"
           placeholder="Preço (R$)"
         />
-        <button
-          type="submit"
-          className="btn btn-primary"
-        >
+        <button type="submit" className="btn btn-primary">
           Adicionar
         </button>
       </form>

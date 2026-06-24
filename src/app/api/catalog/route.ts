@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { getCatalogOverride, saveCatalogOverride } from "@/lib/db/workshop-media";
+import { mapDbWorkshop } from "@/lib/db/mappers";
+import { prisma } from "@/lib/db/prisma";
+import { resolveWorkshopPublicCatalog } from "@/lib/db/workshop-catalog";
 import { getRequestUser, userHasPermission } from "@/lib/db/request-auth";
 import type { WorkshopCatalog } from "@/types/workshop";
 
@@ -9,8 +12,16 @@ export async function GET() {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
 
-  const catalog = await getCatalogOverride(user.workshopId);
-  return NextResponse.json({ catalog });
+  const row = await prisma.workshop.findUnique({ where: { id: user.workshopId } });
+  if (!row) {
+    return NextResponse.json({ error: "Negócio não encontrado." }, { status: 404 });
+  }
+
+  const workshop = mapDbWorkshop(row);
+  const catalog = (await getCatalogOverride(user.workshopId)) ?? workshop.catalog;
+  const publicCatalog = await resolveWorkshopPublicCatalog(user.workshopId, workshop.catalog);
+
+  return NextResponse.json({ catalog, publicCatalog, slug: row.slug });
 }
 
 export async function PUT(request: Request) {
