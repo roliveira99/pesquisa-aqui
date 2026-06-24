@@ -127,14 +127,83 @@ export const roleRestrictions: Record<UserRole, string[]> = {
 export const navigationByRole: Record<UserRole, NavItem[]> = {
   master: [
     { href: "/dashboard", label: "Dashboard geral", icon: "dashboard", permission: "admin.dashboard_geral" },
-    { href: "/dashboard/admin/oficinas", label: "Oficinas", icon: "building", permission: "admin.visualizar_oficinas", group: "Gestão" },
-    { href: "/dashboard/admin/patrocinios", label: "Patrocínios", icon: "star", permission: "admin.gerenciar_patrocinios", group: "Gestão" },
-    { href: "/dashboard/admin/avaliacoes", label: "Moderação", icon: "clipboard", permission: "admin.moderar_avaliacoes", group: "Conteúdo" },
-    { href: "/dashboard/admin/anuncios", label: "Conteúdo do site", icon: "sparkles", permission: "admin.gerenciar_anuncios", group: "Conteúdo" },
-    { href: "/dashboard/admin/contas", label: "Contas e acessos", icon: "users", permission: "admin.criar_contas", group: "Gestão" },
-    { href: "/dashboard/admin/assinaturas", label: "Assinaturas", icon: "credit-card", permission: "admin.controle_assinaturas", group: "Financeiro" },
-    { href: "/dashboard/admin/relatorios", label: "Relatórios globais", icon: "chart", permission: "admin.relatorios_globais", group: "Relatórios" },
-    { href: "/dashboard/admin/suporte", label: "Suporte", icon: "headset", permission: "admin.suporte", group: "Suporte" },
+    {
+      href: "/dashboard/admin/oficinas",
+      label: "Negócios",
+      icon: "building",
+      permission: "admin.visualizar_oficinas",
+      group: "Gestão da plataforma",
+    },
+    {
+      href: "/dashboard/admin/contas",
+      label: "Contas e acessos",
+      icon: "users",
+      permission: "admin.criar_contas",
+      group: "Gestão da plataforma",
+    },
+    {
+      href: "/dashboard/admin/patrocinios",
+      label: "Patrocínios",
+      icon: "star",
+      permission: "admin.gerenciar_patrocinios",
+      group: "Gestão da plataforma",
+    },
+    {
+      href: "/dashboard/admin/assinaturas",
+      label: "Assinaturas e planos",
+      icon: "credit-card",
+      permission: "admin.controle_assinaturas",
+      group: "Gestão da plataforma",
+    },
+    {
+      href: "/dashboard/admin/anuncios?tab=jornal",
+      label: "Jornal / Manchetes",
+      icon: "sparkles",
+      permission: "admin.gerenciar_anuncios",
+      group: "Gestão da plataforma",
+    },
+    {
+      href: "/dashboard/admin/anuncios?tab=jornalistas",
+      label: "Jornalistas",
+      icon: "users",
+      permission: "admin.gerenciar_jornalistas",
+      group: "Gestão da plataforma",
+    },
+    {
+      href: "/dashboard/admin/anuncios?tab=classificados",
+      label: "Classificados premium",
+      icon: "package",
+      permission: "admin.gerenciar_anuncios",
+      group: "Gestão da plataforma",
+    },
+    {
+      href: "/dashboard/admin/anuncios?tab=banners",
+      label: "Banners e pop-ups",
+      icon: "file",
+      permission: "admin.gerenciar_anuncios",
+      group: "Gestão da plataforma",
+    },
+    {
+      href: "/dashboard/admin/avaliacoes",
+      label: "Moderação de avaliações",
+      icon: "clipboard",
+      permission: "admin.moderar_avaliacoes",
+      group: "Gestão da plataforma",
+    },
+    {
+      href: "/dashboard/admin/relatorios",
+      label: "Relatórios globais",
+      icon: "chart",
+      permission: "admin.relatorios_globais",
+      group: "Gestão da plataforma",
+    },
+    {
+      href: "/dashboard/admin/suporte",
+      label: "Suporte",
+      icon: "headset",
+      permission: "admin.suporte",
+      group: "Gestão da plataforma",
+    },
   ],
   jornalista: [
     { href: "/dashboard/jornal", label: "Minha editoria", icon: "sparkles", permission: "jornalista.gerenciar_manchetes" },
@@ -240,9 +309,10 @@ export function getNavItems(role: UserRole, vertical?: BusinessVertical | null):
 export function canAccessRoute(role: UserRole, pathname: string): boolean {
   const items = navigationByRole[role];
   if (pathname === "/dashboard") {
-    return items.some((i) => i.href === "/dashboard");
+    return items.some((i) => i.href === "/dashboard" || i.href.startsWith("/dashboard?"));
   }
-  return items.some(
-    (i) => pathname === i.href || pathname.startsWith(`${i.href}/`)
-  );
+  return items.some((i) => {
+    const baseHref = i.href.split("?")[0];
+    return pathname === baseHref || pathname.startsWith(`${baseHref}/`);
+  });
 }

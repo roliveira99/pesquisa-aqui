@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ActionButton, DataTable, PageHeader, TabPanel } from "@/components/dashboard/DashboardUI";
 import { PermissionGuard } from "@/components/dashboard/PermissionGuard";
 import { ClassifiedPremiumAdminPanel } from "@/components/admin/ClassifiedPremiumAdminPanel";
@@ -28,7 +29,10 @@ const styles: { value: AnnouncementStyle; label: string }[] = [
 ];
 
 export default function AdminAnunciosPage() {
-  const [tab, setTab] = useState("jornal");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabFromUrl = searchParams.get("tab");
+  const [tab, setTab] = useState(tabFromUrl ?? "jornal");
   const [items, setItems] = useState<SiteAnnouncement[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
@@ -48,6 +52,22 @@ export default function AdminAnunciosPage() {
   useEffect(() => {
     void refreshBanners();
   }, [refreshBanners]);
+
+  useEffect(() => {
+    const validTabs = ["jornal", "jornalistas", "classificados", "banners"] as const;
+    const nextTab = tabFromUrl && validTabs.includes(tabFromUrl as (typeof validTabs)[number])
+      ? tabFromUrl
+      : "jornal";
+    setTab(nextTab);
+    if (!tabFromUrl || tabFromUrl !== nextTab) {
+      router.replace(`/dashboard/admin/anuncios?tab=${nextTab}`, { scroll: false });
+    }
+  }, [tabFromUrl, router]);
+
+  function handleTabChange(nextTab: string) {
+    setTab(nextTab);
+    router.replace(`/dashboard/admin/anuncios?tab=${nextTab}`, { scroll: false });
+  }
 
   async function handleCreateAnnouncement(e: React.FormEvent) {
     e.preventDefault();
@@ -139,7 +159,7 @@ export default function AdminAnunciosPage() {
         description="Gerencie o jornal (manchetes no topo do site) e banners promocionais."
       />
       {feedback && <p className="dash-alert mb-4">{feedback}</p>}
-      <TabPanel tabs={tabs} activeTab={tab} onTabChange={setTab} />
+      <TabPanel tabs={tabs} activeTab={tab} onTabChange={handleTabChange} />
     </PermissionGuard>
   );
 }

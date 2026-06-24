@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { RoleBadge } from "@/components/dashboard/RoleBadge";
 import { Logo } from "@/components/ui/Logo";
@@ -17,6 +17,7 @@ export function DashboardSidebar({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { user, logout } = useAuth();
 
@@ -39,8 +40,20 @@ export function DashboardSidebar({
   }
 
   function isActive(href: string) {
-    if (href === "/dashboard") return pathname === "/dashboard";
-    return pathname === href || pathname.startsWith(`${href}/`);
+    const [path, queryString] = href.split("?");
+    const pathMatches =
+      path === "/dashboard"
+        ? pathname === "/dashboard"
+        : pathname === path || pathname.startsWith(`${path}/`);
+
+    if (!pathMatches) return false;
+    if (!queryString) return true;
+
+    const expected = new URLSearchParams(queryString);
+    for (const [key, value] of expected.entries()) {
+      if (searchParams.get(key) !== value) return false;
+    }
+    return true;
   }
 
   return (

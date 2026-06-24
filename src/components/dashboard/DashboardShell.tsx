@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { DashboardThemeToggle } from "@/components/dashboard/DashboardThemeToggle";
@@ -35,10 +35,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         />
       )}
 
-      <DashboardSidebar
-        mobileOpen={sidebarOpen}
-        onNavigate={() => setSidebarOpen(false)}
-      />
+      <Suspense fallback={null}>
+        <DashboardSidebar
+          mobileOpen={sidebarOpen}
+          onNavigate={() => setSidebarOpen(false)}
+        />
+      </Suspense>
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-border bg-surface px-4 py-2.5 lg:hidden">
