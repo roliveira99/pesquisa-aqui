@@ -1,97 +1,75 @@
 import Link from "next/link";
-import { SectionHeader } from "@/components/ui/SectionHeader";
+import {
+  ClassifiedCategoryBar,
+  ClassifiedOffersSection,
+} from "@/components/classifieds/ClassifiedOffersSection";
 import { formatClassifiedCategory, listClassifieds } from "@/lib/db/classifieds";
 
-export default async function ClassificadosPage() {
-  const ads = await listClassifieds({ activeOnly: true });
+type Props = { searchParams: Promise<{ categoria?: string }> };
+
+export default async function ClassificadosPage({ searchParams }: Props) {
+  const { categoria } = await searchParams;
+  const allAds = await listClassifieds({ activeOnly: true });
+  const categoryFilter = categoria && categoria !== "all" ? categoria : undefined;
+  const ads = categoryFilter
+    ? allAds.filter((a) => a.category === categoryFilter)
+    : allAds;
+
   const premium = ads.filter((a) => a.premium);
   const regular = ads.filter((a) => !a.premium);
 
-  function AdCard({ ad, isPremium }: { ad: (typeof ads)[0]; isPremium?: boolean }) {
-    const wa = ad.contact?.replace(/\D/g, "");
-    return (
-      <article
-        className={`card flex flex-col overflow-hidden transition hover:shadow-lg ${
-          isPremium ? "ring-2 ring-amber-500/30" : ""
-        }`}
-      >
-        <div className="border-b border-border bg-surface-hover/50 px-4 py-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wide text-accent">
-              {formatClassifiedCategory(ad.category)}
-            </span>
-            {isPremium && (
-              <span className="newspaper-premium-badge text-[10px]">Premium · Jornal</span>
-            )}
-          </div>
-          {ad.workshopName && <p className="text-xs text-muted">{ad.workshopName}</p>}
-        </div>
-        <div className="flex flex-1 flex-col p-5">
-          <h2 className="text-lg font-semibold text-foreground">{ad.title}</h2>
-          <p className="mt-2 flex-1 text-sm leading-relaxed text-muted line-clamp-4">{ad.body}</p>
-          {ad.price != null && (
-            <p className="mt-3 text-lg font-semibold text-foreground">
-              R$ {ad.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-            </p>
-          )}
-          {wa && (
-            <a
-              href={`https://wa.me/55${wa}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 inline-flex text-sm font-medium text-accent hover:underline"
-            >
-              Entrar em contato
-            </a>
-          )}
-        </div>
-      </article>
-    );
-  }
+  const counts = allAds.reduce<Record<string, number>>((acc, ad) => {
+    acc[ad.category] = (acc[ad.category] ?? 0) + 1;
+    return acc;
+  }, {});
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-      <SectionHeader
-        eyebrow="Classificados"
-        title="Vendas e divulgações"
-        description="Anúncios premium também aparecem no Jornal. Demais anúncios ficam nesta vitrine."
-      />
+    <div className="classified-marketplace-page mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <header className="classified-page-header">
+        <h1 className="classified-page-title">Classificados</h1>
+        <p className="classified-page-subtitle">
+          Compre, venda e divulgue na sua região — anúncios premium também aparecem no jornal.
+        </p>
+      </header>
+
+      <ClassifiedCategoryBar active={categoryFilter ?? "all"} counts={counts} />
 
       {ads.length === 0 ? (
-        <p className="text-muted">Nenhum classificado publicado ainda.</p>
+        <p className="classified-empty">Nenhum classificado publicado nesta categoria.</p>
       ) : (
         <>
           {premium.length > 0 && (
-            <section className="mb-12">
-              <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
-                Premium
-                <span className="newspaper-premium-badge text-[10px]">No jornal</span>
-              </h2>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {premium.map((ad) => (
-                  <AdCard key={ad.id} ad={ad} isPremium />
-                ))}
-              </div>
-            </section>
+            <ClassifiedOffersSection
+              ads={premium}
+              title="Grandes ofertas"
+              description="Destaques selecionados — os mais procurados da região"
+              layout="carousel"
+              seeMoreHref="/curiosidades/classificados"
+              id="classificados-premium"
+            />
           )}
+
           {regular.length > 0 && (
-            <section>
-              {premium.length > 0 && (
-                <h2 className="mb-4 text-lg font-semibold text-muted">Demais anúncios</h2>
-              )}
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {regular.map((ad) => (
-                  <AdCard key={ad.id} ad={ad} />
-                ))}
-              </div>
-            </section>
+            <ClassifiedOffersSection
+              ads={regular}
+              title={premium.length > 0 ? "Mais anúncios" : "Todos os anúncios"}
+              description={
+                categoryFilter
+                  ? `Resultados em ${formatClassifiedCategory(categoryFilter)}`
+                  : "Explore oportunidades de negócios locais"
+              }
+              layout="grid"
+              seeMoreHref="/login"
+              seeMoreLabel="Anunciar"
+              id="classificados-todos"
+            />
           )}
         </>
       )}
 
-      <p className="mt-10 text-center text-sm text-muted">
+      <p className="classified-page-footer">
         É dono de negócio?{" "}
-        <Link href="/login" className="font-medium text-accent hover:underline">
+        <Link href="/login" className="classified-footer-link">
           Publique no painel
         </Link>
         {" · "}
