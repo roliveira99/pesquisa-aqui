@@ -198,7 +198,7 @@ export async function createPlatformUser(input: {
   name: string;
   email: string;
   password: string;
-  role: "dono" | "gerencia" | "mecanico";
+  role: "dono";
   workshopId: string;
 }): Promise<{ ok: true; user: AdminUserRow } | { ok: false; error: string }> {
   const email = input.email.toLowerCase().trim();
@@ -207,24 +207,22 @@ export async function createPlatformUser(input: {
   }
 
   const workshop = await prisma.workshop.findUnique({ where: { id: input.workshopId } });
-  if (!workshop) return { ok: false, error: "Oficina não encontrada." };
+  if (!workshop) return { ok: false, error: "Perfil não encontrado." };
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return { ok: false, error: "Este e-mail já possui conta." };
 
-  if (input.role === "dono") {
-    const owner = await prisma.user.findFirst({
-      where: { workshopId: input.workshopId, role: "dono" },
-    });
-    if (owner) return { ok: false, error: "Esta oficina já possui um dono cadastrado." };
-  }
+  const owner = await prisma.user.findFirst({
+    where: { workshopId: input.workshopId, role: "dono" },
+  });
+  if (owner) return { ok: false, error: "Este perfil já possui um acesso de dono." };
 
   const row = await prisma.user.create({
     data: {
       email,
       passwordHash: await hashPassword(input.password),
       name: input.name.trim(),
-      role: input.role,
+      role: "dono",
       workshopId: input.workshopId,
     },
     include: { workshop: { select: { name: true } } },

@@ -15,6 +15,9 @@ export type Permission =
   | "admin.gerenciar_jornalistas"
   | "jornalista.gerenciar_manchetes"
   | "owner.dashboard"
+  | "owner.perfil"
+  | "owner.classificados"
+  | "owner.agenda"
   | "owner.fluxo_caixa"
   | "owner.contas_pagar"
   | "owner.contas_receber"
@@ -37,7 +40,6 @@ export type Permission =
   | "owner.relatorios_financeiros"
   | "owner.relatorios_operacionais"
   | "owner.relatorios_produtividade"
-  | "owner.agenda"
   | "gerencia.dashboard"
   | "gerencia.aprovar_orcamentos"
   | "gerencia.alterar_orcamentos"
@@ -72,6 +74,7 @@ export interface AuthUser {
   role: UserRole;
   workshopId: string | null;
   workshopName: string | null;
+  workshopSlug?: string | null;
   workshopVertical?: import("@/types/vertical").BusinessVertical | null;
   journalNiche?: string | null;
 }

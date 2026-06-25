@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     name: body.name as string,
     email: body.email as string,
     password: body.password as string,
-    role: body.role as "dono" | "gerencia" | "mecanico",
+    role: "dono",
     workshopId: body.workshopId as string,
   });
 

@@ -144,8 +144,8 @@ export default function AdminOficinasPage() {
   return (
     <PermissionGuard permissions={["admin.visualizar_oficinas", "admin.aprovar_oficinas"]}>
       <PageHeader
-        title="Gestão de negócios"
-        description="Cadastre empreendimentos de qualquer segmento na plataforma"
+        title="Perfis no site"
+        description="Aprove e cadastre negócios ou pessoas físicas que terão uma página pública na plataforma"
         actions={
           <ActionButton
             label={showForm ? "Fechar formulário" : "+ Novo negócio"}

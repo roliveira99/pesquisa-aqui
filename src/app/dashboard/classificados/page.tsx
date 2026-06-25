@@ -58,7 +58,7 @@ export default function ClassificadosDashboardPage() {
   }
 
   return (
-    <PermissionGuard permissions={["owner.cadastro_servicos"]}>
+    <PermissionGuard permissions={["owner.classificados"]}>
       <PageHeader
         title="Classificados"
         description="Publique anúncios na vitrine pública. Destaque premium no Jornal é definido pelo administrador."

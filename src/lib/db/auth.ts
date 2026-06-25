@@ -10,7 +10,7 @@ const SESSION_DAYS = 7;
 
 export function toAuthUser(
   user: User,
-  workshop: { name: string; vertical?: BusinessVertical | null } | null
+  workshop: { name: string; slug?: string; vertical?: BusinessVertical | null } | null
 ): AuthUser {
   return {
     id: user.id,
@@ -19,6 +19,7 @@ export function toAuthUser(
     role: user.role as UserRole,
     workshopId: user.workshopId,
     workshopName: workshop?.name ?? null,
+    workshopSlug: workshop?.slug ?? null,
     workshopVertical: workshop?.vertical ?? null,
     journalNiche: user.journalNiche ?? null,
   };
@@ -30,7 +31,7 @@ export async function verifyCredentials(
 ): Promise<AuthUser | null> {
   const user = await prisma.user.findUnique({
     where: { email: email.toLowerCase().trim() },
-    include: { workshop: { select: { name: true, vertical: true } } },
+    include: { workshop: { select: { name: true, slug: true, vertical: true } } },
   });
 
   if (!user) return null;
@@ -38,7 +39,7 @@ export async function verifyCredentials(
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) return null;
 
-  return toAuthUser(user, user.workshop ? { name: user.workshop.name, vertical: user.workshop.vertical as BusinessVertical } : null);
+  return toAuthUser(user, user.workshop ? { name: user.workshop.name, slug: user.workshop.slug, vertical: user.workshop.vertical as BusinessVertical } : null);
 }
 
 export async function createSession(userId: string): Promise<string> {
@@ -61,7 +62,7 @@ export async function getSessionUser(token: string | undefined): Promise<AuthUse
       where: { token },
       include: {
         user: {
-          include: { workshop: { select: { name: true, vertical: true } } },
+          include: { workshop: { select: { name: true, slug: true, vertical: true } } },
         },
       },
     });
@@ -74,7 +75,11 @@ export async function getSessionUser(token: string | undefined): Promise<AuthUse
     return toAuthUser(
       session.user,
       session.user.workshop
-        ? { name: session.user.workshop.name, vertical: session.user.workshop.vertical as BusinessVertical }
+        ? {
+            name: session.user.workshop.name,
+            slug: session.user.workshop.slug,
+            vertical: session.user.workshop.vertical as BusinessVertical,
+          }
         : null
     );
   } catch {

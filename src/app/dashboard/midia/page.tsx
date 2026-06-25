@@ -73,17 +73,17 @@ export default function MidiaPage() {
 
   if (loading) {
     return (
-      <PermissionGuard permissions={["owner.cadastro_servicos"]}>
-        <PageHeader title="Mídia e galeria" description="Carregando..." />
+      <PermissionGuard permissions={["owner.perfil"]}>
+        <PageHeader title="Meu perfil no site" description="Carregando..." />
       </PermissionGuard>
     );
   }
 
   return (
-    <PermissionGuard permissions={["owner.cadastro_servicos"]}>
+    <PermissionGuard permissions={["owner.perfil"]}>
       <PageHeader
-        title="Perfil da oficina"
-        description="Fotos, vídeos, slogans e informações exibidas no perfil público"
+        title="Meu perfil no site"
+        description="Fotos, vídeos, slogans e informações exibidas na sua página pública"
       />
 
       {message && (

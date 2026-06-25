@@ -61,7 +61,7 @@ export async function apiCreateUser(input: {
   name: string;
   email: string;
   password: string;
-  role: "dono" | "gerencia" | "mecanico";
+  role?: "dono";
   workshopId: string;
 }) {
   const res = await fetch("/api/admin/users", {

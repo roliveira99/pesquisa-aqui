@@ -22,7 +22,7 @@ export function userHasPermission(user: AuthUser, permission: Permission): boole
 }
 
 export function userCanManageAgenda(user: AuthUser): boolean {
-  return userHasPermission(user, "owner.agenda") || userHasPermission(user, "gerencia.agenda");
+  return userHasPermission(user, "owner.agenda");
 }
 
 export async function userHasEffectivePermission(

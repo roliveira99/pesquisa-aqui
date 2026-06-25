@@ -63,7 +63,7 @@ export function JournalAdminPanel({
 
   const tableHeaders = useMemo(() => {
     const headers = ["Título", "Editoria", "Cidade"];
-    if (isMaster) headers.push("Autor", "Capa");
+    if (isMaster) headers.push("Autor", "Destaque");
     headers.push("Status", "Ações");
     return headers;
   }, [isMaster]);
@@ -159,7 +159,7 @@ export function JournalAdminPanel({
         {isMaster ? (
           <>
             Crie manchetes para o jornal no topo do site: escolha a editoria (cidade, esporte, negócios…),
-            adicione imagem por URL e marque uma como <strong>capa</strong> para aparecer em destaque na home.
+            adicione imagem por URL e marque <strong>destaque no topo</strong> para aparecer maior na home do jornal.
           </>
         ) : (
           <>
@@ -245,7 +245,7 @@ export function JournalAdminPanel({
                 onChange={(e) => setForm({ ...form, featured: e.target.checked })}
                 className="rounded border-border"
               />
-              Destaque na capa do jornal (home)
+              Destaque no topo do jornal (hero maior na home)
             </label>
           )}
 

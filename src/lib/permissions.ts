@@ -1,14 +1,16 @@
 import type { BusinessVertical } from "@/types/vertical";
 import type { NavItem, Permission, UserRole } from "@/types/auth";
 import { getCategoryLabel } from "@/lib/article-categories";
-import { getOperationalConfig } from "@/lib/verticals/operational";
+
+/** Perfis operacionais descontinuados — sem acesso ao painel. */
+export const DEPRECATED_ROLES: UserRole[] = ["gerencia", "mecanico"];
 
 export const roleLabels: Record<UserRole, string> = {
   master: "Administrador Master",
   jornalista: "Jornalista",
-  dono: "Dono da Oficina",
-  gerencia: "Gerência",
-  mecanico: "Mecânico",
+  dono: "Dono do perfil",
+  gerencia: "Gerência (descontinuado)",
+  mecanico: "Mecânico (descontinuado)",
 };
 
 export const roleIcons: Record<UserRole, string> = {
@@ -36,64 +38,16 @@ const masterPermissions: Permission[] = [
 
 const jornalistaPermissions: Permission[] = ["jornalista.gerenciar_manchetes"];
 
+/** Dono: apenas perfil público, classificados e agenda. */
 const donoPermissions: Permission[] = [
   "owner.dashboard",
-  "owner.fluxo_caixa",
-  "owner.contas_pagar",
-  "owner.contas_receber",
-  "owner.estoque",
-  "owner.cadastro_pecas",
-  "owner.cadastro_servicos",
-  "owner.cadastro_clientes",
-  "owner.cadastro_veiculos",
-  "owner.cadastro_funcionarios",
-  "owner.mecanicos_ficticios",
-  "owner.criar_orcamento",
-  "owner.configurar_notas",
-  "owner.salarios",
-  "owner.comissoes",
-  "owner.ponto",
-  "owner.aprovar_orcamentos",
-  "owner.aprovar_alteracoes",
-  "owner.emissao_pdf",
-  "owner.envio_whatsapp",
-  "owner.relatorios_financeiros",
-  "owner.relatorios_operacionais",
-  "owner.relatorios_produtividade",
+  "owner.perfil",
+  "owner.classificados",
   "owner.agenda",
 ];
 
-const gerenciaPermissions: Permission[] = [
-  "gerencia.dashboard",
-  "gerencia.aprovar_orcamentos",
-  "gerencia.alterar_orcamentos",
-  "gerencia.cadastro_clientes",
-  "gerencia.cadastro_veiculos",
-  "gerencia.estoque",
-  "gerencia.entrada_pecas",
-  "gerencia.saida_pecas",
-  "gerencia.emissao_notas",
-  "gerencia.emissao_pdf",
-  "gerencia.envio_whatsapp",
-  "gerencia.relatorios_operacionais",
-  "gerencia.agenda",
-  "gerencia.controle_servicos",
-  "gerencia.mecanicos_ficticios",
-  "gerencia.criar_orcamento",
-];
-
-const mecanicoPermissions: Permission[] = [
-  "mecanico.criar_orcamento",
-  "mecanico.registrar_servicos",
-  "mecanico.registrar_pecas",
-  "mecanico.historico_proprio",
-  "mecanico.consultar_comissoes",
-  "mecanico.consultar_produtividade",
-  "mecanico.solicitar_alteracao",
-  "mecanico.registrar_fotos",
-  "mecanico.atualizar_status",
-  "mecanico.fornecedores",
-];
+const gerenciaPermissions: Permission[] = [];
+const mecanicoPermissions: Permission[] = [];
 
 export const rolePermissions: Record<UserRole, Permission[]> = {
   master: masterPermissions,
@@ -104,25 +58,19 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
 };
 
 export const roleRestrictions: Record<UserRole, string[]> = {
-  master: ["Alterar dados operacionais sem permissão da oficina"],
+  master: ["Alterar dados operacionais sem permissão do perfil"],
   jornalista: [
     "Publica apenas na editoria atribuída",
     "Não define capa do jornal na home",
     "Não promove classificados premium",
   ],
-  dono: ["Alterar configurações globais da plataforma"],
-  gerencia: [
-    "Não visualiza salários",
-    "Não altera plano contratado",
-    "Não gerencia assinatura",
+  dono: [
+    "Personaliza o perfil público no site",
+    "Publica classificados e gerencia agenda",
+    "Sem gestão operacional (estoque, financeiro, etc.)",
   ],
-  mecanico: [
-    "Não aprova orçamento",
-    "Não altera estoque",
-    "Não altera valores de tabela",
-    "Não visualiza dados financeiros da empresa",
-    "Não visualiza salários de outros funcionários",
-  ],
+  gerencia: ["Perfil descontinuado — solicite migração ao administrador"],
+  mecanico: ["Perfil descontinuado — solicite migração ao administrador"],
 };
 
 export const navigationByRole: Record<UserRole, NavItem[]> = {
@@ -130,14 +78,14 @@ export const navigationByRole: Record<UserRole, NavItem[]> = {
     { href: "/dashboard", label: "Dashboard geral", icon: "dashboard", permission: "admin.dashboard_geral" },
     {
       href: "/dashboard/admin/oficinas",
-      label: "Negócios",
+      label: "Perfis no site",
       icon: "building",
       permission: "admin.visualizar_oficinas",
       group: "Gestão da plataforma",
     },
     {
       href: "/dashboard/admin/contas",
-      label: "Contas e acessos",
+      label: "Acessos de perfis",
       icon: "users",
       permission: "admin.criar_contas",
       group: "Gestão da plataforma",
@@ -207,44 +155,47 @@ export const navigationByRole: Record<UserRole, NavItem[]> = {
     },
   ],
   jornalista: [
-    { href: "/dashboard/jornal", label: "Minha editoria", icon: "sparkles", permission: "jornalista.gerenciar_manchetes" },
+    {
+      href: "/dashboard/jornal",
+      label: "Minha editoria",
+      icon: "sparkles",
+      permission: "jornalista.gerenciar_manchetes",
+    },
   ],
   dono: [
-    { href: "/dashboard", label: "Dashboard", icon: "dashboard", permission: "owner.dashboard" },
-    { href: "/dashboard/financeiro", label: "Financeiro", icon: "wallet", permission: "owner.fluxo_caixa", group: "Financeiro" },
-    { href: "/dashboard/orcamentos", label: "Orçamentos", icon: "file", permission: "owner.aprovar_orcamentos", group: "Operacional" },
-    { href: "/dashboard/notas-servico", label: "Notas de serviço", icon: "file", permission: "owner.emissao_pdf", group: "Operacional" },
-    { href: "/dashboard/estoque", label: "Estoque", icon: "box", permission: "owner.estoque", group: "Operacional" },
-    { href: "/dashboard/servicos", label: "Serviços", icon: "wrench", permission: "owner.cadastro_servicos", group: "Operacional" },
-    { href: "/dashboard/agenda", label: "Agenda", icon: "calendar", permission: "owner.agenda", group: "Operacional" },
-    { href: "/dashboard/cadastros", label: "Cadastros", icon: "clipboard", permission: "owner.cadastro_clientes", group: "Cadastros" },
-    { href: "/dashboard/catalogo", label: "Catálogo público", icon: "package", permission: "owner.cadastro_servicos", group: "Cadastros" },
-    { href: "/dashboard/perfil", label: "Perfil da oficina", icon: "sparkles", permission: "owner.cadastro_servicos", group: "Cadastros" },
-    { href: "/dashboard/classificados", label: "Classificados", icon: "package", permission: "owner.cadastro_servicos", group: "Cadastros" },
-    { href: "/dashboard/equipe-ficticia", label: "Equipe sem acesso", icon: "user-group", permission: "owner.mecanicos_ficticios", group: "RH" },
-    { href: "/dashboard/rh", label: "RH", icon: "user-group", permission: "owner.salarios", group: "RH" },
-    { href: "/dashboard/relatorios", label: "Relatórios", icon: "chart", permission: "owner.relatorios_financeiros", group: "Relatórios" },
+    { href: "/dashboard", label: "Início", icon: "dashboard", permission: "owner.dashboard" },
+    {
+      href: "/dashboard/perfil",
+      label: "Meu perfil no site",
+      icon: "sparkles",
+      permission: "owner.perfil",
+      group: "Meu site",
+    },
+    {
+      href: "/dashboard/classificados",
+      label: "Classificados",
+      icon: "package",
+      permission: "owner.classificados",
+      group: "Meu site",
+    },
+    {
+      href: "/dashboard/agenda",
+      label: "Agenda",
+      icon: "calendar",
+      permission: "owner.agenda",
+      group: "Meu site",
+    },
   ],
-  gerencia: [
-    { href: "/dashboard", label: "Dashboard operacional", icon: "dashboard", permission: "gerencia.dashboard" },
-    { href: "/dashboard/orcamentos", label: "Orçamentos", icon: "file", permission: "gerencia.aprovar_orcamentos", group: "Operacional" },
-    { href: "/dashboard/notas-servico", label: "Notas de serviço", icon: "file", permission: "gerencia.emissao_notas", group: "Operacional" },
-    { href: "/dashboard/estoque", label: "Estoque", icon: "box", permission: "gerencia.estoque", group: "Operacional" },
-    { href: "/dashboard/servicos", label: "Serviços", icon: "wrench", permission: "gerencia.controle_servicos", group: "Operacional" },
-    { href: "/dashboard/cadastros", label: "Veículos e clientes", icon: "car", permission: "gerencia.cadastro_clientes", group: "Cadastros" },
-    { href: "/dashboard/agenda", label: "Agenda", icon: "calendar", permission: "gerencia.agenda", group: "Operacional" },
-    { href: "/dashboard/equipe-ficticia", label: "Equipe sem acesso", icon: "user-group", permission: "gerencia.mecanicos_ficticios", group: "Equipe" },
-    { href: "/dashboard/relatorios", label: "Relatórios", icon: "chart", permission: "gerencia.relatorios_operacionais", group: "Relatórios" },
-  ],
-  mecanico: [
-    { href: "/dashboard", label: "Meu painel", icon: "wrench", permission: "mecanico.registrar_servicos" },
-    { href: "/dashboard/mecanico/orcamentos", label: "Orçamentos", icon: "clipboard", permission: "mecanico.criar_orcamento", group: "Serviços" },
-    { href: "/dashboard/mecanico/servicos", label: "Meus serviços", icon: "wrench", permission: "mecanico.historico_proprio", group: "Serviços" },
-    { href: "/dashboard/mecanico/fornecedores", label: "Fornecedores", icon: "users", permission: "mecanico.fornecedores", group: "Contatos" },
-    { href: "/dashboard/mecanico/comissoes", label: "Comissões", icon: "wallet", permission: "mecanico.consultar_comissoes", group: "Desempenho" },
-    { href: "/dashboard/mecanico/produtividade", label: "Produtividade", icon: "chart", permission: "mecanico.consultar_produtividade", group: "Desempenho" },
-  ],
+  gerencia: [],
+  mecanico: [],
 };
+
+/** Rotas extras permitidas além do menu (aliases). */
+const OWNER_EXTRA_ROUTES = ["/dashboard/midia"];
+
+export function isDeprecatedRole(role: UserRole): boolean {
+  return DEPRECATED_ROLES.includes(role);
+}
 
 export function getDashboardHomeHref(role: UserRole): string {
   return navigationByRole[role][0]?.href ?? "/dashboard";
@@ -258,66 +209,43 @@ export function hasAnyPermission(role: UserRole, permissions: Permission[]): boo
   return permissions.some((p) => hasPermission(role, p));
 }
 
-/** Permissões que liberam gestão da agenda (solicitações e aprovações). */
-export const agendaPermissions: Permission[] = ["owner.agenda", "gerencia.agenda"];
+export const agendaPermissions: Permission[] = ["owner.agenda"];
 
-export function getRoleLabel(role: UserRole, vertical?: BusinessVertical | null, journalNiche?: string | null): string {
+export function getRoleLabel(
+  role: UserRole,
+  _vertical?: BusinessVertical | null,
+  journalNiche?: string | null
+): string {
   if (role === "jornalista" && journalNiche) {
     return `Jornalista — ${getCategoryLabel(journalNiche)}`;
-  }
-  if (role === "mecanico") {
-    return getOperationalConfig(vertical).roles.operator;
   }
   return roleLabels[role];
 }
 
-function applyVerticalNavLabels(items: NavItem[], vertical?: BusinessVertical | null): NavItem[] {
-  const ops = getOperationalConfig(vertical);
-  return items.map((item) => {
-    if (item.href === "/dashboard/cadastros" && item.label.includes("Veículos")) {
-      return { ...item, label: ops.assets.tabLabel };
-    }
-    if (item.href === "/dashboard/equipe-ficticia") {
-      return { ...item, label: ops.roles.teamWithoutLogin };
-    }
-    if (item.href === "/dashboard/mecanico/orcamentos" || item.href.startsWith("/dashboard/mecanico")) {
-      if (item.label === "Meu painel") {
-        return { ...item, label: `Meu painel (${ops.roles.operator})` };
-      }
-    }
-    if (item.href === "/dashboard/estoque" && ops.catalog.partsLabel !== "Peças") {
-      return item;
-    }
-    return item;
-  });
+export function getNavItems(role: UserRole, _vertical?: BusinessVertical | null): NavItem[] {
+  return navigationByRole[role] ?? [];
 }
 
-export function getNavItems(role: UserRole, vertical?: BusinessVertical | null): NavItem[] {
-  const items = navigationByRole[role] ?? [];
-  if (role === "gerencia") {
-    const ops = getOperationalConfig(vertical);
-    return applyVerticalNavLabels(
-      items.map((item) =>
-        item.href === "/dashboard/cadastros"
-          ? { ...item, label: `${ops.assets.pluralLabel} e clientes` }
-          : item
-      ),
-      vertical
-    );
-  }
-  if (role === "dono" || role === "mecanico") {
-    return applyVerticalNavLabels(items, vertical);
-  }
-  return items;
+function routeMatches(pathname: string, href: string): boolean {
+  const baseHref = href.split("?")[0];
+  return pathname === baseHref || pathname.startsWith(`${baseHref}/`);
 }
 
 export function canAccessRoute(role: UserRole, pathname: string): boolean {
-  const items = navigationByRole[role];
-  if (pathname === "/dashboard") {
-    return items.some((i) => i.href === "/dashboard" || i.href.startsWith("/dashboard?"));
+  if (isDeprecatedRole(role)) {
+    return pathname === "/dashboard";
   }
-  return items.some((i) => {
-    const baseHref = i.href.split("?")[0];
-    return pathname === baseHref || pathname.startsWith(`${baseHref}/`);
-  });
+
+  const items = navigationByRole[role];
+  const fromNav = items.some((item) => routeMatches(pathname, item.href));
+
+  if (role === "dono") {
+    return fromNav || OWNER_EXTRA_ROUTES.some((route) => routeMatches(pathname, route));
+  }
+
+  if (pathname === "/dashboard") {
+    return items.length > 0 || role === "master";
+  }
+
+  return fromNav;
 }

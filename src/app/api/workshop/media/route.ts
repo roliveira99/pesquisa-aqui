@@ -5,7 +5,7 @@ import type { WorkshopGalleryItem } from "@/types/workshop";
 
 export async function GET() {
   const user = await getRequestUser();
-  if (!user?.workshopId || !userHasPermission(user, "owner.cadastro_servicos")) {
+  if (!user?.workshopId || !userHasPermission(user, "owner.perfil")) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
 
@@ -15,7 +15,7 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   const user = await getRequestUser();
-  if (!user?.workshopId || !userHasPermission(user, "owner.cadastro_servicos")) {
+  if (!user?.workshopId || !userHasPermission(user, "owner.perfil")) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
 

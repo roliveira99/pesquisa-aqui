@@ -1,4 +1,5 @@
 import { DashboardGuard } from "@/components/dashboard/DashboardGuard";
+import { DashboardRouteGuard } from "@/components/dashboard/DashboardRouteGuard";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 
 export default function DashboardLayout({
@@ -8,7 +9,9 @@ export default function DashboardLayout({
 }) {
   return (
     <DashboardGuard>
-      <DashboardShell>{children}</DashboardShell>
+      <DashboardShell>
+        <DashboardRouteGuard>{children}</DashboardRouteGuard>
+      </DashboardShell>
     </DashboardGuard>
   );
 }

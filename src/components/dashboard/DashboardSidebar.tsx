@@ -7,7 +7,7 @@ import { RoleBadge } from "@/components/dashboard/RoleBadge";
 import { Logo } from "@/components/ui/Logo";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { DashboardThemeToggle } from "@/components/dashboard/DashboardThemeToggle";
-import { getNavItems } from "@/lib/permissions";
+import { getNavItems, isDeprecatedRole } from "@/lib/permissions";
 
 export function DashboardSidebar({
   mobileOpen = false,
@@ -24,7 +24,8 @@ export function DashboardSidebar({
   if (!user) return null;
 
   const navItems = getNavItems(user.role, user.workshopVertical);
-  if (navItems.length === 0) return null;
+  const showNav = navItems.length > 0 || isDeprecatedRole(user.role);
+  if (!showNav) return null;
 
   const grouped = navItems.reduce<Record<string, typeof navItems>>((acc, item) => {
     const group = item.group ?? "Menu";
@@ -78,26 +79,32 @@ export function DashboardSidebar({
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2 py-3">
-        {Object.entries(grouped).map(([group, items]) => (
-          <div key={group} className="mb-4">
-            <p className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--dash-sidebar-text)]">
-              {group}
-            </p>
-            <div className="space-y-0.5">
-              {items.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={onNavigate}
-                  className={`dash-nav-item ${isActive(item.href) ? "dash-nav-item-active" : ""}`}
-                >
-                  <Icon name={item.icon as IconName} className="h-4 w-4 shrink-0 opacity-70" />
-                  {item.label}
-                </Link>
-              ))}
+        {navItems.length === 0 && isDeprecatedRole(user.role) ? (
+          <p className="px-2 text-xs text-[var(--dash-sidebar-text)]">
+            Este perfil foi descontinuado. Fale com o administrador.
+          </p>
+        ) : (
+          Object.entries(grouped).map(([group, items]) => (
+            <div key={group} className="mb-4">
+              <p className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--dash-sidebar-text)]">
+                {group}
+              </p>
+              <div className="space-y-0.5">
+                {items.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={onNavigate}
+                    className={`dash-nav-item ${isActive(item.href) ? "dash-nav-item-active" : ""}`}
+                  >
+                    <Icon name={item.icon as IconName} className="h-4 w-4 shrink-0 opacity-70" />
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </nav>
 
       <div className="border-t border-[var(--dash-sidebar-border)] px-3 py-3">
