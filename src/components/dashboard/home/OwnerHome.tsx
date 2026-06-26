@@ -52,6 +52,7 @@ export function OwnerHome() {
           </p>
           <ul className="mt-4 space-y-2">
             <QuickLink href="/dashboard/perfil" icon="sparkles" label="Editar perfil e mídia" />
+            <QuickLink href="/dashboard/catalogo" icon="clipboard" label="Gerenciar catálogo" />
             <QuickLink href="/dashboard/classificados" icon="package" label="Publicar classificados" />
             <QuickLink href="/dashboard/agenda" icon="calendar" label="Gerenciar agenda" />
           </ul>
@@ -110,7 +111,7 @@ function QuickLink({
   label,
 }: {
   href: string;
-  icon: "sparkles" | "package" | "calendar";
+  icon: "sparkles" | "package" | "calendar" | "clipboard";
   label: string;
 }) {
   return (

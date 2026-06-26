@@ -41,6 +41,46 @@ function CatalogList({
     );
   }
 
+  const hasImages = items.some((item) => item.imageUrl);
+
+  if (hasImages) {
+    return (
+      <div>
+        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">{title}</h3>
+        <ul className="grid gap-3 sm:grid-cols-2">
+          {items.map((item) => (
+            <li
+              key={item.id}
+              className="overflow-hidden rounded-xl border border-border bg-surface"
+            >
+              {item.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={item.imageUrl}
+                  alt=""
+                  className="aspect-[4/3] w-full object-cover"
+                />
+              ) : (
+                <div className="flex aspect-[4/3] items-center justify-center bg-surface-hover text-xs text-muted">
+                  Sem foto
+                </div>
+              )}
+              <div className="p-3">
+                <p className="text-sm font-medium text-foreground">{item.name}</p>
+                {item.description && (
+                  <p className="mt-0.5 text-xs text-muted">{item.description}</p>
+                )}
+                <p className="mt-2 text-sm font-semibold text-accent">
+                  a partir de {formatCatalogPrice(item.priceFrom)}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
   return (
     <div>
       <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">{title}</h3>

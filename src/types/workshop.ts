@@ -5,6 +5,7 @@ export interface CatalogItem {
   name: string;
   priceFrom: number;
   description?: string;
+  imageUrl?: string;
 }
 
 export interface MechanicRankingEntry {

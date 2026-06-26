@@ -60,11 +60,12 @@ export function formatCatalogPrice(value: number): string {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-export function newCatalogItem(name: string, priceFrom: number): CatalogItem {
+export function newCatalogItem(name: string, priceFrom: number, imageUrl?: string): CatalogItem {
   return {
     id: `item-${Date.now()}`,
     name,
     priceFrom,
+    ...(imageUrl ? { imageUrl } : {}),
   };
 }
 

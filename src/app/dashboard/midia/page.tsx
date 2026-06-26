@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { PageHeader } from "@/components/dashboard/DashboardUI";
 import { PermissionGuard } from "@/components/dashboard/PermissionGuard";
+import { GalleryImagePicker, ImageFilePicker } from "@/components/ui/ImageFilePicker";
 import { Icon } from "@/components/ui/Icon";
 import { fetchWorkshopMedia, saveWorkshopMedia } from "@/lib/api/crm-client";
 import type { WorkshopGalleryItem } from "@/types/workshop";
@@ -15,10 +16,12 @@ export default function MidiaPage() {
   const [profileVideos, setProfileVideos] = useState<string[]>([]);
   const [highlights, setHighlights] = useState<{ title: string; body: string }[]>([]);
   const [opportunities, setOpportunities] = useState<{ title: string; body: string }[]>([]);
-  const [newUrl, setNewUrl] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
   const [newCaption, setNewCaption] = useState("");
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -43,28 +46,37 @@ export default function MidiaPage() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setMessage("");
-    await saveWorkshopMedia({
-      coverImage: coverImage.trim(),
-      tagline: tagline.trim(),
-      slogan: slogan.trim(),
-      gallery,
-      profileVideos,
-      profileHighlights: highlights,
-      businessOpportunities: opportunities,
-    });
-    setMessage("Alterações salvas — visíveis no perfil público após recarregar a página.");
-    await refresh();
+    setError("");
+    setSaving(true);
+    try {
+      await saveWorkshopMedia({
+        coverImage: coverImage.trim(),
+        tagline: tagline.trim(),
+        slogan: slogan.trim(),
+        gallery,
+        profileVideos,
+        profileHighlights: highlights,
+        businessOpportunities: opportunities,
+      });
+      setMessage("Alterações salvas — visíveis no perfil público após recarregar a página.");
+      await refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha ao salvar.");
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function addGalleryItem() {
-    const url = newUrl.trim();
-    if (!url) return;
+  function addGalleryItems(items: { url: string; caption: string }[]) {
     setGallery((prev) => [
       ...prev,
-      { id: `gal-${Date.now()}`, url, caption: newCaption.trim() || "Foto da oficina", kind: "ambiente" as const },
+      ...items.map((item, index) => ({
+        id: `gal-${Date.now()}-${index}`,
+        url: item.url,
+        caption: item.caption,
+        kind: "ambiente" as const,
+      })),
     ]);
-    setNewUrl("");
-    setNewCaption("");
   }
 
   function removeGalleryItem(id: string) {
@@ -86,68 +98,63 @@ export default function MidiaPage() {
         description="Fotos, vídeos, slogans e informações exibidas na sua página pública"
       />
 
-      {message && (
-        <p className="dash-alert">{message}</p>
-      )}
+      {message && <p className="dash-alert">{message}</p>}
+      {error && <p className="dash-alert dash-alert-error">{error}</p>}
 
       <form onSubmit={handleSave} className="space-y-6">
         <section className="card p-5">
           <h2 className="font-semibold text-foreground">Capa e destaque</h2>
           <p className="mt-1 text-sm text-muted">
-            Use URLs de imagens (ex.: Unsplash). A capa aparece no topo do perfil público.
+            Escolha uma foto da galeria do seu celular ou computador. A capa aparece no topo do perfil
+            público.
           </p>
-          <div className="mt-4 grid gap-4 lg:grid-cols-2">
-            <label className="block text-sm">
-              <span className="font-medium">URL da capa</span>
-              <input
-                value={coverImage}
-                onChange={(e) => setCoverImage(e.target.value)}
-                className="input-field mt-1.5"
-                placeholder="https://images.unsplash.com/..."
-              />
-            </label>
-            <label className="block text-sm">
-              <span className="font-medium">Slogan</span>
-              <input
-                value={slogan}
-                onChange={(e) => setSlogan(e.target.value)}
-                className="input-field mt-1.5"
-                placeholder="Ex.: Qualidade que você confia"
-              />
-            </label>
-            <label className="block text-sm lg:col-span-2">
-              <span className="font-medium">Frase de destaque (tagline)</span>
-              <input
-                value={tagline}
-                onChange={(e) => setTagline(e.target.value)}
-                className="input-field mt-1.5"
-                placeholder="Ex.: Especialistas em injeção eletrônica"
-              />
-            </label>
-          </div>
-          {coverImage && (
-            <div className="mt-4 overflow-hidden rounded-xl border border-border">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={coverImage} alt="Prévia da capa" className="h-40 w-full object-cover" />
+          <div className="mt-4 grid gap-6 lg:grid-cols-2">
+            <ImageFilePicker
+              label="Foto de capa"
+              hint="JPG, PNG ou WebP — até 12 MB. A imagem é otimizada automaticamente."
+              value={coverImage}
+              onChange={setCoverImage}
+              onClear={() => setCoverImage("")}
+              buttonLabel="Escolher foto de capa"
+            />
+            <div className="space-y-4">
+              <label className="block text-sm">
+                <span className="font-medium">Slogan</span>
+                <input
+                  value={slogan}
+                  onChange={(e) => setSlogan(e.target.value)}
+                  className="input-field mt-1.5"
+                  placeholder="Ex.: Qualidade que você confia"
+                />
+              </label>
+              <label className="block text-sm">
+                <span className="font-medium">Frase de destaque (tagline)</span>
+                <input
+                  value={tagline}
+                  onChange={(e) => setTagline(e.target.value)}
+                  className="input-field mt-1.5"
+                  placeholder="Ex.: Especialistas em injeção eletrônica"
+                />
+              </label>
             </div>
-          )}
+          </div>
         </section>
 
         <section className="card p-5">
           <h2 className="font-semibold text-foreground">Vídeos (URLs YouTube/Vimeo)</h2>
           <div className="mt-4 flex gap-2">
             <input
-              value={newUrl}
-              onChange={(e) => setNewUrl(e.target.value)}
+              value={videoUrl}
+              onChange={(e) => setVideoUrl(e.target.value)}
               className="input-field flex-1"
               placeholder="https://youtube.com/..."
             />
             <button
               type="button"
               onClick={() => {
-                if (!newUrl.trim()) return;
-                setProfileVideos((p) => [...p, newUrl.trim()]);
-                setNewUrl("");
+                if (!videoUrl.trim()) return;
+                setProfileVideos((p) => [...p, videoUrl.trim()]);
+                setVideoUrl("");
               }}
               className="rounded-lg border border-border px-4 py-2 text-sm"
             >
@@ -158,7 +165,11 @@ export default function MidiaPage() {
             {profileVideos.map((v, i) => (
               <li key={v} className="flex justify-between gap-2">
                 <span className="truncate">{v}</span>
-                <button type="button" className="text-danger" onClick={() => setProfileVideos((p) => p.filter((_, j) => j !== i))}>
+                <button
+                  type="button"
+                  className="text-danger"
+                  onClick={() => setProfileVideos((p) => p.filter((_, j) => j !== i))}
+                >
                   Remover
                 </button>
               </li>
@@ -184,33 +195,32 @@ export default function MidiaPage() {
 
         <section className="card p-5">
           <h2 className="font-semibold text-foreground">Galeria de fotos</h2>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <input
-              value={newUrl}
-              onChange={(e) => setNewUrl(e.target.value)}
-              className="input-field min-w-[200px] flex-1"
-              placeholder="URL da foto"
-            />
-            <input
-              value={newCaption}
-              onChange={(e) => setNewCaption(e.target.value)}
-              className="input-field min-w-[160px] flex-1"
-              placeholder="Legenda (opcional)"
-            />
-            <button
-              type="button"
-              onClick={addGalleryItem}
-              className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-surface-hover"
-            >
-              Adicionar foto
-            </button>
+          <p className="mt-1 text-sm text-muted">
+            Adicione fotos salvas no seu dispositivo — ambiente, equipe, produtos ou serviços.
+          </p>
+
+          <div className="mt-4 space-y-3">
+            <label className="block text-sm">
+              <span className="font-medium">Legenda padrão (opcional)</span>
+              <input
+                value={newCaption}
+                onChange={(e) => setNewCaption(e.target.value)}
+                className="input-field mt-1.5 max-w-md"
+                placeholder="Ex.: Nossa loja"
+              />
+            </label>
+            <GalleryImagePicker caption={newCaption} onAdd={addGalleryItems} />
           </div>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {gallery.map((item) => (
               <figure key={item.id} className="group relative overflow-hidden rounded-xl border border-border">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={item.url} alt={item.caption ?? "Foto da oficina"} className="aspect-video w-full object-cover" />
+                <img
+                  src={item.url}
+                  alt={item.caption ?? "Foto do perfil"}
+                  className="aspect-video w-full object-cover"
+                />
                 {item.caption && (
                   <figcaption className="border-t border-border px-3 py-2 text-xs text-muted">
                     {item.caption}
@@ -232,11 +242,8 @@ export default function MidiaPage() {
           )}
         </section>
 
-        <button
-          type="submit"
-          className="btn btn-primary"
-        >
-          Salvar alterações
+        <button type="submit" className="btn btn-primary" disabled={saving}>
+          {saving ? "Salvando…" : "Salvar alterações"}
         </button>
       </form>
     </PermissionGuard>
@@ -279,7 +286,11 @@ function ProfileBlockEditor({
           <li key={`${item.title}-${i}`} className="rounded border border-border p-3">
             <strong>{item.title}</strong>
             <p className="text-muted">{item.body}</p>
-            <button type="button" className="mt-1 text-xs text-danger" onClick={() => onChange(items.filter((_, j) => j !== i))}>
+            <button
+              type="button"
+              className="mt-1 text-xs text-danger"
+              onClick={() => onChange(items.filter((_, j) => j !== i))}
+            >
               Remover
             </button>
           </li>

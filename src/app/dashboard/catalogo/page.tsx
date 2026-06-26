@@ -5,6 +5,7 @@ import Link from "next/link";
 import { PermissionGuard } from "@/components/dashboard/PermissionGuard";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { PageHeader } from "@/components/dashboard/DashboardUI";
+import { ImageFilePicker } from "@/components/ui/ImageFilePicker";
 import { fetchCatalog, saveCatalog } from "@/lib/api/crm-client";
 import { businessProfilePath } from "@/lib/platform-routes";
 import { formatCatalogPrice, newCatalogItem } from "@/lib/workshop-storage";
@@ -18,6 +19,7 @@ export default function CatalogoPublicoPage() {
   const [catalog, setCatalog] = useState<WorkshopCatalog>(emptyCatalog);
   const [publicCatalog, setPublicCatalog] = useState<WorkshopCatalog>(emptyCatalog);
   const [slug, setSlug] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -35,23 +37,25 @@ export default function CatalogoPublicoPage() {
   }, [user?.workshopId]);
 
   async function persist(next: WorkshopCatalog) {
+    setError("");
     setCatalog(next);
-    await saveCatalog(next);
     try {
+      await saveCatalog(next);
       const data = await fetchCatalog();
       setCatalog(data.catalog ?? next);
       setPublicCatalog(data.publicCatalog ?? next);
       setSlug(data.slug ?? slug);
-    } catch {
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha ao salvar catálogo.");
       setPublicCatalog(next);
     }
   }
 
-  function addItem(type: "services" | "parts", name: string, price: number) {
+  function addItem(type: "services" | "parts", name: string, price: number, imageUrl?: string) {
     if (!name.trim() || price <= 0) return;
     persist({
       ...catalog,
-      [type]: [...catalog[type], newCatalogItem(name.trim(), price)],
+      [type]: [...catalog[type], newCatalogItem(name.trim(), price, imageUrl)],
     });
   }
 
@@ -69,16 +73,27 @@ export default function CatalogoPublicoPage() {
     });
   }
 
+  function updateImage(type: "services" | "parts", id: string, imageUrl: string) {
+    persist({
+      ...catalog,
+      [type]: catalog[type].map((i) =>
+        i.id === id ? { ...i, imageUrl: imageUrl || undefined } : i
+      ),
+    });
+  }
+
   const profileHref = slug ? businessProfilePath(slug) : null;
   const publicServiceCount = publicCatalog.services.length;
   const publicPartCount = publicCatalog.parts.length;
 
   return (
-    <PermissionGuard permissions={["owner.cadastro_servicos"]}>
+    <PermissionGuard permissions={["owner.catalogo"]}>
       <PageHeader
         title="Catálogo do perfil público"
-        description="Serviços e peças exibidos no seu perfil — como um cardápio do negócio. Preços são referência e podem mudar no orçamento."
+        description="Serviços e produtos exibidos no seu perfil — como um cardápio do negócio. Adicione foto de cada item."
       />
+
+      {error && <p className="dash-alert dash-alert-error mb-4">{error}</p>}
 
       <p className="dash-alert mb-6">{PRICE_DISCLAIMER}</p>
 
@@ -88,8 +103,7 @@ export default function CatalogoPublicoPage() {
           {publicServiceCount} serviço{publicServiceCount === 1 ? "" : "s"} e {publicPartCount} peça
           {publicPartCount === 1 ? "" : "s"}/produto{publicPartCount === 1 ? "" : "s"}
         </strong>
-        . Itens cadastrados em <strong>Cadastros → Serviços</strong> com &quot;Exibir no catálogo público&quot; também
-        entram aqui automaticamente.
+        .
       </p>
 
       {profileHref ? (
@@ -108,6 +122,7 @@ export default function CatalogoPublicoPage() {
         onAdd={addItem}
         onRemove={removeItem}
         onUpdatePrice={updatePrice}
+        onUpdateImage={updateImage}
       />
 
       <CatalogEditor
@@ -117,6 +132,7 @@ export default function CatalogoPublicoPage() {
         onAdd={addItem}
         onRemove={removeItem}
         onUpdatePrice={updatePrice}
+        onUpdateImage={updateImage}
         className="mt-8"
       />
     </PermissionGuard>
@@ -130,18 +146,21 @@ function CatalogEditor({
   onAdd,
   onRemove,
   onUpdatePrice,
+  onUpdateImage,
   className,
 }: {
   title: string;
   type: "services" | "parts";
   items: CatalogItem[];
-  onAdd: (type: "services" | "parts", name: string, price: number) => void;
+  onAdd: (type: "services" | "parts", name: string, price: number, imageUrl?: string) => void;
   onRemove: (type: "services" | "parts", id: string) => void;
   onUpdatePrice: (type: "services" | "parts", id: string, price: number) => void;
+  onUpdateImage: (type: "services" | "parts", id: string, imageUrl: string) => void;
   className?: string;
 }) {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
 
   return (
     <section className={`card p-5 ${className ?? ""}`}>
@@ -150,50 +169,90 @@ function CatalogEditor({
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          onAdd(type, name, Number(price));
+          onAdd(type, name, Number(price), imageUrl || undefined);
           setName("");
           setPrice("");
+          setImageUrl("");
         }}
-        className="mt-4 flex flex-wrap gap-3"
+        className="mt-4 space-y-4"
       >
-        <input
-          required
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="input-field min-w-[200px] flex-1"
-          placeholder="Nome do item"
+        <div className="flex flex-wrap gap-3">
+          <input
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="input-field min-w-[200px] flex-1"
+            placeholder="Nome do item"
+          />
+          <input
+            required
+            type="number"
+            min={1}
+            step={0.01}
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            className="input-field w-32"
+            placeholder="Preço (R$)"
+          />
+        </div>
+
+        <ImageFilePicker
+          label="Foto do item (opcional)"
+          hint="Escolha uma imagem da galeria do dispositivo."
+          value={imageUrl}
+          onChange={setImageUrl}
+          onClear={() => setImageUrl("")}
+          buttonLabel="Escolher foto"
+          previewClassName="h-28 w-28 rounded-lg object-cover"
         />
-        <input
-          required
-          type="number"
-          min={1}
-          step={0.01}
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          className="input-field w-32"
-          placeholder="Preço (R$)"
-        />
+
         <button type="submit" className="btn btn-primary">
-          Adicionar
+          Adicionar ao catálogo
         </button>
       </form>
 
-      <ul className="mt-4 divide-y divide-border">
+      <ul className="mt-6 divide-y divide-border">
         {items.map((item) => (
-          <li key={item.id} className="flex flex-wrap items-center gap-3 py-3">
-            <span className="min-w-[140px] flex-1 font-medium">{item.name}</span>
-            <label className="flex items-center gap-2 text-sm text-muted">
-              a partir de R$
-              <input
-                type="number"
-                min={1}
-                step={0.01}
-                value={item.priceFrom}
-                onChange={(e) => onUpdatePrice(type, item.id, Number(e.target.value))}
-                className="input-field w-24 py-1"
+          <li key={item.id} className="flex flex-wrap items-start gap-4 py-4">
+            {item.imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={item.imageUrl}
+                alt=""
+                className="h-16 w-16 shrink-0 rounded-lg border border-border object-cover"
               />
-              <span className="text-xs">({formatCatalogPrice(item.priceFrom)})</span>
-            </label>
+            ) : (
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border border-dashed border-border bg-surface-hover text-xs text-muted">
+                Sem foto
+              </div>
+            )}
+
+            <div className="min-w-[140px] flex-1">
+              <p className="font-medium text-foreground">{item.name}</p>
+              <label className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
+                a partir de R$
+                <input
+                  type="number"
+                  min={1}
+                  step={0.01}
+                  value={item.priceFrom}
+                  onChange={(e) => onUpdatePrice(type, item.id, Number(e.target.value))}
+                  className="input-field w-24 py-1"
+                />
+                <span className="text-xs">({formatCatalogPrice(item.priceFrom)})</span>
+              </label>
+              <div className="mt-3 max-w-xs">
+                <ImageFilePicker
+                  label=""
+                  value={item.imageUrl ?? ""}
+                  onChange={(url) => onUpdateImage(type, item.id, url)}
+                  onClear={() => onUpdateImage(type, item.id, "")}
+                  buttonLabel={item.imageUrl ? "Trocar foto" : "Adicionar foto"}
+                  previewClassName="hidden"
+                />
+              </div>
+            </div>
+
             <button
               type="button"
               onClick={() => onRemove(type, item.id)}

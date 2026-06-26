@@ -17,6 +17,7 @@ export type Permission =
   | "owner.dashboard"
   | "owner.perfil"
   | "owner.classificados"
+  | "owner.catalogo"
   | "owner.agenda"
   | "owner.fluxo_caixa"
   | "owner.contas_pagar"

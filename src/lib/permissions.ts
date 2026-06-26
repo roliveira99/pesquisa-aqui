@@ -43,6 +43,7 @@ const donoPermissions: Permission[] = [
   "owner.dashboard",
   "owner.perfil",
   "owner.classificados",
+  "owner.catalogo",
   "owner.agenda",
 ];
 
@@ -176,6 +177,13 @@ export const navigationByRole: Record<UserRole, NavItem[]> = {
       label: "Classificados",
       icon: "package",
       permission: "owner.classificados",
+      group: "Meu site",
+    },
+    {
+      href: "/dashboard/catalogo",
+      label: "Catálogo",
+      icon: "clipboard",
+      permission: "owner.catalogo",
       group: "Meu site",
     },
     {

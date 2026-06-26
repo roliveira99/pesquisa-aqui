@@ -8,7 +8,7 @@ import type { WorkshopCatalog } from "@/types/workshop";
 
 export async function GET() {
   const user = await getRequestUser();
-  if (!user?.workshopId || !userHasPermission(user, "owner.cadastro_servicos")) {
+  if (!user?.workshopId || !userHasPermission(user, "owner.catalogo")) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
 
@@ -26,11 +26,24 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   const user = await getRequestUser();
-  if (!user?.workshopId || !userHasPermission(user, "owner.cadastro_servicos")) {
+  if (!user?.workshopId || !userHasPermission(user, "owner.catalogo")) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
 
   const body = (await request.json()) as { catalog: WorkshopCatalog };
+
+  const imageUrls = [
+    ...body.catalog.services.map((i) => i.imageUrl),
+    ...body.catalog.parts.map((i) => i.imageUrl),
+  ].filter((url): url is string => typeof url === "string" && url.length > 0);
+
+  if (imageUrls.some((url) => url.length > 2_500_000)) {
+    return NextResponse.json(
+      { error: "Uma ou mais imagens do catálogo são muito grandes." },
+      { status: 413 }
+    );
+  }
+
   await saveCatalogOverride(user.workshopId, body.catalog);
   return NextResponse.json({ ok: true });
 }

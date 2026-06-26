@@ -29,6 +29,18 @@ export async function PUT(request: Request) {
     businessOpportunities?: { title: string; body: string }[];
   };
 
+  const tooLarge = [
+    body.coverImage,
+    ...(body.gallery?.map((g) => g.url) ?? []),
+  ].some((url) => typeof url === "string" && url.length > 2_500_000);
+
+  if (tooLarge) {
+    return NextResponse.json(
+      { error: "Uma ou mais imagens são muito grandes. Tente fotos menores." },
+      { status: 413 }
+    );
+  }
+
   await updateWorkshopMedia(user.workshopId, body);
   const media = await getWorkshopMedia(user.workshopId);
   return NextResponse.json(media);

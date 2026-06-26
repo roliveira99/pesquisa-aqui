@@ -135,7 +135,10 @@ export async function saveCatalog(catalog: import("@/types/workshop").WorkshopCa
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ catalog }),
   });
-  if (!res.ok) throw new Error("Falha ao salvar catálogo.");
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(data.error ?? "Falha ao salvar catálogo.");
+  }
 }
 
 export async function fetchSuppliers() {
@@ -190,7 +193,10 @@ export async function saveWorkshopMedia(input: {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
-  if (!res.ok) throw new Error("Falha ao salvar mídia.");
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(data.error ?? "Falha ao salvar mídia.");
+  }
   return res.json() as Promise<{
     coverImage: string | null;
     tagline: string | null;
