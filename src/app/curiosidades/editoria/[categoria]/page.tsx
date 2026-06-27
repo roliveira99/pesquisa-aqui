@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { APP_NAME } from "@/lib/brand";
 import { NewspaperCategoryPage } from "@/components/news/NewspaperCategoryPage";
 import { NewspaperCategoryNav, NewspaperMasthead } from "@/components/news/NewspaperMasthead";
+import { normalizeCityFilter } from "@/lib/cities";
 import {
   getCategoryDef,
   isValidArticleCategory,
@@ -9,7 +10,10 @@ import {
 } from "@/lib/article-categories";
 import { listArticles, seedArticlesIfEmpty } from "@/lib/db/articles";
 
-type Props = { params: Promise<{ categoria: string }> };
+type Props = {
+  params: Promise<{ categoria: string }>;
+  searchParams: Promise<{ cidade?: string }>;
+};
 
 export async function generateStaticParams() {
   const { ARTICLE_CATEGORIES } = await import("@/lib/article-categories");
@@ -26,19 +30,26 @@ export async function generateMetadata({ params }: Props) {
   };
 }
 
-export default async function JournalCategoryPage({ params }: Props) {
+export default async function JournalCategoryPage({ params, searchParams }: Props) {
   const { categoria } = await params;
+  const { cidade } = await searchParams;
+  const cityFilter = normalizeCityFilter(cidade);
+
   if (!isValidArticleCategory(categoria)) notFound();
 
   const def = getCategoryDef(categoria)!;
   await seedArticlesIfEmpty();
-  const articles = await listArticles({ activeOnly: true, category: categoria });
+  const articles = await listArticles({
+    activeOnly: true,
+    category: categoria,
+    city: cityFilter,
+  });
 
   return (
     <div className="news-feed-page newspaper-page mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <NewspaperMasthead />
-      <NewspaperCategoryNav activeTab={categoria as JournalTabId} />
-      <NewspaperCategoryPage category={def} articles={articles} />
+      <NewspaperCategoryNav activeTab={categoria as JournalTabId} selectedCity={cityFilter} />
+      <NewspaperCategoryPage category={def} articles={articles} selectedCity={cityFilter} />
     </div>
   );
 }

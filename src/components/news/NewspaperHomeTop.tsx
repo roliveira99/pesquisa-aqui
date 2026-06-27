@@ -9,17 +9,23 @@ import type { SiteArticleRecord } from "@/lib/db/articles";
 export function NewspaperHomeTop({
   articles,
   premiumClassifieds,
+  selectedCity,
 }: {
   articles: SiteArticleRecord[];
   premiumClassifieds: ClassifiedAdRecord[];
+  selectedCity?: string;
 }) {
   if (articles.length === 0 && premiumClassifieds.length === 0) {
     return (
       <section id="jornal" className="news-feed-page border-b border-border bg-surface">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <NewspaperMasthead compact />
-          <NewspaperCategoryNav activeTab="inicio" />
-          <p className="text-center text-muted">Em breve, novas manchetes no jornal.</p>
+          <NewspaperCategoryNav activeTab="inicio" selectedCity={selectedCity} />
+          <p className="text-center text-muted">
+            {selectedCity
+              ? `Nenhuma manchete ou oferta publicada para ${selectedCity} ainda.`
+              : "Em breve, novas manchetes no jornal."}
+          </p>
         </div>
       </section>
     );
@@ -29,7 +35,7 @@ export function NewspaperHomeTop({
     <section id="jornal" className="news-feed-page border-b border-border bg-surface">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
         <NewspaperMasthead compact />
-        <NewspaperCategoryNav activeTab="inicio" />
+        <NewspaperCategoryNav activeTab="inicio" selectedCity={selectedCity} />
 
         {articles.length > 0 && <NewsDashboard articles={articles} limit={12} />}
 
@@ -37,7 +43,7 @@ export function NewspaperHomeTop({
 
         <div className="mt-8 flex justify-center border-t border-border pt-6">
           <Link
-            href="/curiosidades#jornal-completo"
+            href={selectedCity ? `/curiosidades?cidade=${encodeURIComponent(selectedCity)}#jornal-completo` : "/curiosidades#jornal-completo"}
             className="inline-flex items-center gap-2 text-sm font-semibold text-accent hover:text-accent-hover"
           >
             Ver todas as notícias

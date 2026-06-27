@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActionButton, DataTable } from "@/components/dashboard/DashboardUI";
 import { ARTICLE_CATEGORIES } from "@/lib/article-categories";
+import { CitySelectField } from "@/components/region/CitySelectField";
+import { PLATFORM_CITIES } from "@/lib/cities";
 import { articleHref, formatCategoryLabel } from "@/lib/article-slug";
 
 interface ArticleRow {
@@ -32,7 +34,7 @@ function buildEmptyForm(category: string) {
     summary: "",
     content: "",
     category,
-    city: "",
+    city: PLATFORM_CITIES[0] as string,
     imageUrl: "",
     featured: false,
   };
@@ -80,7 +82,7 @@ export function JournalAdminPanel({
       summary: article.summary,
       content: article.content,
       category: isMaster ? article.category : defaultCategory,
-      city: article.city ?? "",
+      city: article.city ?? (PLATFORM_CITIES[0] as string),
       imageUrl: article.imageUrl ?? "",
       featured: article.featured,
     });
@@ -106,7 +108,7 @@ export function JournalAdminPanel({
         summary: form.summary,
         content: form.content,
         category,
-        city: category === "cidade" ? form.city : null,
+        city: form.city.trim() || null,
         imageUrl: form.imageUrl || null,
         featured: isMaster ? form.featured : false,
       }),
@@ -206,14 +208,12 @@ export function JournalAdminPanel({
                 Editoria: {formatCategoryLabel(defaultCategory)}
               </div>
             )}
-            {(isMaster ? form.category : defaultCategory) === "cidade" && (
-              <input
-                value={form.city}
-                onChange={(e) => setForm({ ...form, city: e.target.value })}
-                className="input-field"
-                placeholder="Cidade (ex.: São Paulo)"
-              />
-            )}
+            <CitySelectField
+              required
+              value={form.city}
+              onChange={(city) => setForm({ ...form, city })}
+              placeholder="Cidade da matéria *"
+            />
             <input
               value={form.imageUrl}
               onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}

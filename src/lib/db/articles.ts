@@ -32,6 +32,7 @@ async function uniqueSlug(base: string, excludeId?: string): Promise<string> {
 export interface ListArticlesOptions {
   activeOnly?: boolean;
   category?: string;
+  city?: string;
 }
 
 export async function listArticles(
@@ -46,6 +47,7 @@ export async function listArticles(
     where: {
       ...(activeOnly ? { active: true } : {}),
       ...(options.category ? { category: options.category } : {}),
+      ...(options.city ? { city: options.city } : {}),
     },
     include: { author: { select: { name: true } } },
     orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
@@ -245,6 +247,7 @@ export async function seedArticlesIfEmpty(): Promise<void> {
         "Em partida emocionante no estádio municipal, o time da casa superou o rival por 2 a 1 e assumiu a ponta da tabela.\n\n" +
         "O técnico destacou a entrega do elenco e confirmou que busca reforços para a segunda fase da competição.",
       category: "esporte",
+      city: "Rio de Janeiro",
       imageUrl: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1200&q=80",
     },
     {
@@ -262,6 +265,7 @@ export async function seedArticlesIfEmpty(): Promise<void> {
       content:
         "O festival retorna após dois anos com foco em artistas locais e bandas convidadas. A organização estima público de 15 mil pessoas durante o fim de semana.",
       category: "cultura",
+      city: "Salvador",
       imageUrl: "https://images.unsplash.com/photo-1459749411177-041a6838c9c0?w=1200&q=80",
     },
     {
@@ -270,6 +274,7 @@ export async function seedArticlesIfEmpty(): Promise<void> {
       content:
         "Antes de fechar um serviço, compare perfis, leia avaliações de clientes reais e peça orçamento detalhado. Transparência é o principal indicador de confiança.",
       category: "servicos",
+      city: "Curitiba",
     },
     {
       title: "Novas ferramentas de IA chegam a pequenas empresas",
@@ -277,6 +282,7 @@ export async function seedArticlesIfEmpty(): Promise<void> {
       content:
         "Pequenos comércios passam a adotar assistentes virtuais e automações simples para responder clientes e organizar agenda — sem necessidade de equipe técnica.",
       category: "tecnologia",
+      city: "São Paulo",
     },
   ];
 

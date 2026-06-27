@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SiteSearchBar } from "@/components/search/SiteSearchBar";
+import { CitySelector } from "@/components/region/CitySelector";
 import { APP_NAME } from "@/lib/brand";
 import { formatArticleDate } from "@/lib/article-slug";
 import {
@@ -9,6 +10,7 @@ import {
   journalCategoryHref,
   type JournalTabId,
 } from "@/lib/article-categories";
+import { withCityQuery } from "@/lib/cities";
 
 export function NewspaperMasthead({ compact = false }: { compact?: boolean }) {
   const today = formatArticleDate(new Date().toISOString());
@@ -18,7 +20,7 @@ export function NewspaperMasthead({ compact = false }: { compact?: boolean }) {
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2 text-xs uppercase tracking-widest text-muted">
         <span>Edição digital</span>
         <span className="hidden sm:inline">{today}</span>
-        <span>Brasil</span>
+        <CitySelector />
       </div>
       <div className="border-y-2 border-foreground py-3 sm:py-4">
         <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-muted sm:text-xs">
@@ -61,10 +63,15 @@ function tabClass(active: boolean, premium = false) {
 export function NewspaperCategoryNav({
   activeTab = "inicio",
   showClassifiedsTab = true,
+  selectedCity,
 }: {
   activeTab?: JournalTabId;
   showClassifiedsTab?: boolean;
+  selectedCity?: string;
 }) {
+  const homeHref = withCityQuery(JOURNAL_HOME_HREF, selectedCity);
+  const classifiedsHref = withCityQuery(JOURNAL_CLASSIFIEDS_HREF, selectedCity);
+
   return (
     <nav
       aria-label="Seções do jornal"
@@ -72,7 +79,7 @@ export function NewspaperCategoryNav({
     >
       <div className="flex min-w-max items-center gap-2 border-b border-border pb-3">
         <Link
-          href={JOURNAL_HOME_HREF}
+          href={homeHref}
           className={`rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition ${tabClass(activeTab === "inicio")}`}
           aria-current={activeTab === "inicio" ? "page" : undefined}
         >
@@ -81,7 +88,7 @@ export function NewspaperCategoryNav({
         {ARTICLE_CATEGORIES.map((cat) => (
           <Link
             key={cat.value}
-            href={journalCategoryHref(cat.value)}
+            href={withCityQuery(journalCategoryHref(cat.value), selectedCity)}
             className={`rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition ${tabClass(activeTab === cat.value)}`}
             aria-current={activeTab === cat.value ? "page" : undefined}
           >
@@ -90,7 +97,7 @@ export function NewspaperCategoryNav({
         ))}
         {showClassifiedsTab && (
           <Link
-            href={JOURNAL_CLASSIFIEDS_HREF}
+            href={classifiedsHref}
             className={`rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition ${tabClass(activeTab === "classificados", true)}`}
             aria-current={activeTab === "classificados" ? "page" : undefined}
           >
@@ -102,8 +109,17 @@ export function NewspaperCategoryNav({
   );
 }
 
-export function NewspaperBackLink({ category }: { category?: string }) {
-  const href = category ? journalCategoryHref(category) : JOURNAL_HOME_HREF;
+export function NewspaperBackLink({
+  category,
+  selectedCity,
+}: {
+  category?: string;
+  selectedCity?: string;
+}) {
+  const href = withCityQuery(
+    category ? journalCategoryHref(category) : JOURNAL_HOME_HREF,
+    selectedCity
+  );
   const label = category
     ? `← Voltar para ${ARTICLE_CATEGORIES.find((c) => c.value === category)?.label ?? category}`
     : "← Voltar ao jornal";

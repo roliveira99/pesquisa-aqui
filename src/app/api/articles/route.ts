@@ -13,6 +13,7 @@ import {
   journalistCategory,
 } from "@/lib/db/article-access";
 import { getRequestUser } from "@/lib/db/request-auth";
+import { isPlatformCity } from "@/lib/cities";
 
 async function assertArticleAccess(user: import("@/types/auth").AuthUser, articleId: string) {
   const article = await getArticleAdminById(articleId);
@@ -71,13 +72,24 @@ export async function POST(request: Request) {
         }
       }
 
+      const cityInput =
+        (body.city as string | null | undefined)?.trim() ||
+        (user.role === "jornalista" ? user.journalCity?.trim() : undefined);
+
+      if (!cityInput || !isPlatformCity(cityInput)) {
+        return NextResponse.json(
+          { error: "Selecione a cidade da matéria." },
+          { status: 400 }
+        );
+      }
+
       const article = await upsertArticle({
         id: body.id as string | undefined,
         title: body.title as string,
         summary: body.summary as string,
         content: body.content as string,
         category,
-        city: body.city as string | null | undefined,
+        city: cityInput,
         icon: body.icon as string | undefined,
         imageUrl: body.imageUrl as string | null | undefined,
         featured: isMaster ? (body.featured as boolean | undefined) : false,

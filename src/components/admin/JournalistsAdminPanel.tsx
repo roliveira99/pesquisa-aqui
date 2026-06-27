@@ -9,6 +9,8 @@ import {
   apiUpdateJournalist,
   fetchAdminJournalists,
 } from "@/lib/api/admin-client";
+import { CitySelectField } from "@/components/region/CitySelectField";
+import { PLATFORM_CITIES } from "@/lib/cities";
 import type { JournalistRow } from "@/lib/db/admin";
 import { formatCategoryLabel } from "@/lib/article-slug";
 
@@ -18,6 +20,7 @@ const emptyForm = {
   email: "",
   password: "",
   journalNiche: "cidade",
+  journalCity: PLATFORM_CITIES[0] as string,
 };
 
 export function JournalistsAdminPanel({ onFeedback }: { onFeedback: (msg: string) => void }) {
@@ -45,6 +48,7 @@ export function JournalistsAdminPanel({ onFeedback }: { onFeedback: (msg: string
       email: j.email,
       password: "",
       journalNiche: j.journalNiche ?? "geral",
+      journalCity: j.journalCity ?? (PLATFORM_CITIES[0] as string),
     });
     setShowForm(true);
   }
@@ -62,6 +66,7 @@ export function JournalistsAdminPanel({ onFeedback }: { onFeedback: (msg: string
         id: form.id,
         name: form.name,
         journalNiche: form.journalNiche,
+        journalCity: form.journalCity,
         password: form.password || undefined,
       });
       if ("error" in result && result.error) {
@@ -75,6 +80,7 @@ export function JournalistsAdminPanel({ onFeedback }: { onFeedback: (msg: string
         email: form.email,
         password: form.password,
         journalNiche: form.journalNiche,
+        journalCity: form.journalCity,
       });
       if ("error" in result && result.error) {
         onFeedback(result.error);
@@ -152,6 +158,12 @@ export function JournalistsAdminPanel({ onFeedback }: { onFeedback: (msg: string
                 </option>
               ))}
             </select>
+            <CitySelectField
+              required
+              value={form.journalCity}
+              onChange={(journalCity) => setForm({ ...form, journalCity })}
+              placeholder="Cidade de atuação *"
+            />
           </div>
 
           <button type="submit" className="btn btn-primary">
@@ -161,11 +173,12 @@ export function JournalistsAdminPanel({ onFeedback }: { onFeedback: (msg: string
       )}
 
       <DataTable
-        headers={["Nome", "E-mail", "Editoria", "Ações"]}
+        headers={["Nome", "E-mail", "Editoria", "Cidade", "Ações"]}
         rows={journalists.map((j) => [
           j.name,
           j.email,
           formatCategoryLabel(j.journalNiche ?? "geral"),
+          j.journalCity ?? "—",
           <div key={j.id} className="flex flex-wrap gap-1">
             <ActionButton label="Editar" onClick={() => startEdit(j)} />
             <ActionButton label="Remover" variant="danger" onClick={() => void handleDelete(j.id)} />

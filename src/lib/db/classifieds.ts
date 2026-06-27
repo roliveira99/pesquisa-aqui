@@ -4,6 +4,7 @@ export interface ClassifiedAdRecord {
   id: string;
   workshopId: string | null;
   workshopName: string | null;
+  workshopCity: string | null;
   title: string;
   body: string;
   price: number | null;
@@ -24,21 +25,26 @@ export async function listClassifieds(opts?: {
   workshopId?: string;
   activeOnly?: boolean;
   premiumOnly?: boolean;
+  city?: string;
 }): Promise<ClassifiedAdRecord[]> {
   const rows = await prisma.classifiedAd.findMany({
     where: {
       ...(opts?.workshopId ? { workshopId: opts.workshopId } : {}),
       ...(opts?.activeOnly !== false ? { active: true } : {}),
       ...(opts?.premiumOnly ? { premium: true } : {}),
+      ...(opts?.city ? { workshop: { city: opts.city } } : {}),
     },
-    include: { workshop: { select: { name: true } } },
+    include: { workshop: { select: { name: true, city: true } } },
     orderBy: [{ premium: "desc" }, { createdAt: "desc" }],
   });
   return rows.filter((r) => notExpired(r.expiresAt)).map(mapClassified);
 }
 
-export async function listPremiumClassifieds(limit?: number): Promise<ClassifiedAdRecord[]> {
-  const rows = await listClassifieds({ activeOnly: true, premiumOnly: true });
+export async function listPremiumClassifieds(
+  limit?: number,
+  city?: string
+): Promise<ClassifiedAdRecord[]> {
+  const rows = await listClassifieds({ activeOnly: true, premiumOnly: true, city });
   return limit ? rows.slice(0, limit) : rows;
 }
 
@@ -126,7 +132,7 @@ export async function deleteClassified(
 function mapClassified(row: {
   id: string;
   workshopId: string | null;
-  workshop?: { name: string } | null;
+  workshop?: { name: string; city?: string } | null;
   title: string;
   body: string;
   price: number | null;
@@ -142,6 +148,7 @@ function mapClassified(row: {
     id: row.id,
     workshopId: row.workshopId,
     workshopName: row.workshop?.name ?? null,
+    workshopCity: row.workshop?.city ?? null,
     title: row.title,
     body: row.body,
     price: row.price,

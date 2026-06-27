@@ -3,13 +3,17 @@ import {
   ClassifiedCategoryBar,
   ClassifiedOffersSection,
 } from "@/components/classifieds/ClassifiedOffersSection";
+import { normalizeCityFilter } from "@/lib/cities";
 import { formatClassifiedCategory, listClassifieds } from "@/lib/db/classifieds";
 
-type Props = { searchParams: Promise<{ categoria?: string }> };
+type Props = {
+  searchParams: Promise<{ categoria?: string; cidade?: string }>;
+};
 
 export default async function ClassificadosPage({ searchParams }: Props) {
-  const { categoria } = await searchParams;
-  const allAds = await listClassifieds({ activeOnly: true });
+  const { categoria, cidade } = await searchParams;
+  const cityFilter = normalizeCityFilter(cidade);
+  const allAds = await listClassifieds({ activeOnly: true, city: cityFilter });
   const categoryFilter = categoria && categoria !== "all" ? categoria : undefined;
   const ads = categoryFilter
     ? allAds.filter((a) => a.category === categoryFilter)
@@ -23,19 +27,27 @@ export default async function ClassificadosPage({ searchParams }: Props) {
     return acc;
   }, {});
 
+  const citySuffix = cityFilter ? `?cidade=${encodeURIComponent(cityFilter)}` : "";
+
   return (
     <div className="classified-marketplace-page mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <header className="classified-page-header">
-        <h1 className="classified-page-title">Classificados</h1>
+        <h1 className="classified-page-title">
+          Classificados{cityFilter ? ` — ${cityFilter}` : ""}
+        </h1>
         <p className="classified-page-subtitle">
           Compre, venda e divulgue na sua região — anúncios premium também aparecem no jornal.
         </p>
       </header>
 
-      <ClassifiedCategoryBar active={categoryFilter ?? "all"} counts={counts} />
+      <ClassifiedCategoryBar active={categoryFilter ?? "all"} counts={counts} cityFilter={cityFilter} />
 
       {ads.length === 0 ? (
-        <p className="classified-empty">Nenhum classificado publicado nesta categoria.</p>
+        <p className="classified-empty">
+          {cityFilter
+            ? `Nenhum classificado publicado em ${cityFilter} nesta categoria.`
+            : "Nenhum classificado publicado nesta categoria."}
+        </p>
       ) : (
         <>
           {premium.length > 0 && (
@@ -44,7 +56,7 @@ export default async function ClassificadosPage({ searchParams }: Props) {
               title="Grandes ofertas"
               description="Destaques selecionados — os mais procurados da região"
               layout="carousel"
-              seeMoreHref="/curiosidades/classificados"
+              seeMoreHref={`/curiosidades/classificados${citySuffix}`}
               id="classificados-premium"
             />
           )}

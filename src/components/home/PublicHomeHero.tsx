@@ -5,14 +5,15 @@ import { useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { APP_NAME } from "@/lib/brand";
 import { directoryUrl } from "@/lib/platform-routes";
+import { PLATFORM_CITIES } from "@/lib/cities";
 import { getVerticalConfig, VERTICAL_LIST } from "@/lib/verticals/config";
 import { workshopTypeLabels } from "@/lib/labels";
 import type { BusinessVertical } from "@/types/vertical";
 import type { WorkshopType } from "@/types/workshop";
 
-const popularCities = ["São Paulo", "Rio de Janeiro", "Belo Horizonte", "Curitiba", "Santos"];
+const popularCities = PLATFORM_CITIES.slice(0, 5);
 
-export function PublicHomeHero() {
+export function PublicHomeHero({ selectedCity }: { selectedCity?: string }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [segment, setSegment] = useState<BusinessVertical | "">("");
@@ -22,13 +23,20 @@ export function PublicHomeHero() {
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-    const params: { q?: string; segmento?: BusinessVertical; tipo?: string; categoria?: string } = {};
+    const params: {
+      q?: string;
+      segmento?: BusinessVertical;
+      tipo?: string;
+      categoria?: string;
+      cidade?: string;
+    } = {};
     if (query.trim()) params.q = query.trim();
     if (segment) params.segmento = segment;
     if (subFilter) {
       if (segmentConfig?.usesAutomotiveTypes) params.tipo = subFilter;
       else params.categoria = subFilter;
     }
+    if (selectedCity) params.cidade = selectedCity;
     router.push(directoryUrl(params));
   }
 
@@ -132,7 +140,7 @@ export function PublicHomeHero() {
               <button
                 key={city}
                 type="button"
-                onClick={() => router.push(directoryUrl({ q: city }))}
+                onClick={() => router.push(directoryUrl({ cidade: city }))}
                 className="rounded-full border border-border bg-surface px-3 py-1 text-muted-foreground transition hover:border-accent hover:text-accent"
               >
                 {city}
@@ -165,31 +173,6 @@ export function PublicTrustBar() {
               <p className="font-semibold text-foreground">{item.title}</p>
               <p className="text-sm text-muted">{item.desc}</p>
             </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-export function PublicHowItWorks() {
-  const steps = [
-    { n: "1", title: "Busque", desc: "Filtre por cidade, segmento ou serviço." },
-    { n: "2", title: "Compare", desc: "Veja fotos, notas, catálogo e horários." },
-    { n: "3", title: "Contato", desc: "WhatsApp, agenda ou ligação — sem criar conta." },
-  ];
-
-  return (
-    <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-      <h2 className="text-center text-2xl font-semibold">Como funciona para você</h2>
-      <div className="mt-10 grid gap-8 md:grid-cols-3">
-        {steps.map((step) => (
-          <div key={step.n} className="text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent text-lg font-bold text-white">
-              {step.n}
-            </div>
-            <h3 className="mt-4 font-semibold">{step.title}</h3>
-            <p className="mt-2 text-sm text-muted">{step.desc}</p>
           </div>
         ))}
       </div>

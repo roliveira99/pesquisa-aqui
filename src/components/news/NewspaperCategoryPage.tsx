@@ -5,14 +5,20 @@ import type { SiteArticleRecord } from "@/lib/db/articles";
 export function NewspaperCategoryPage({
   category,
   articles,
+  selectedCity,
 }: {
   category: ArticleCategoryDef;
   articles: SiteArticleRecord[];
+  selectedCity?: string;
 }) {
   if (articles.length === 0) {
     return (
       <div className="py-16 text-center">
-        <p className="text-muted">Nenhuma matéria publicada em {category.label} ainda.</p>
+        <p className="text-muted">
+          {selectedCity
+            ? `Nenhuma matéria publicada em ${category.label} para ${selectedCity} ainda.`
+            : `Nenhuma matéria publicada em ${category.label} ainda.`}
+        </p>
       </div>
     );
   }

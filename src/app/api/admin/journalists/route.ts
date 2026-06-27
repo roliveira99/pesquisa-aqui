@@ -34,6 +34,7 @@ export async function POST(request: Request) {
     email: body.email as string,
     password: body.password as string,
     journalNiche: body.journalNiche as string,
+    journalCity: body.journalCity as string,
   });
 
   if (!result.ok) {
@@ -57,6 +58,7 @@ export async function PATCH(request: Request) {
     id: body.id as string,
     name: body.name as string | undefined,
     journalNiche: body.journalNiche as string | undefined,
+    journalCity: body.journalCity as string | undefined,
     password: body.password as string | undefined,
   });
 

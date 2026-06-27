@@ -7,12 +7,19 @@ export function businessProfilePath(slug: string): string {
   return `${DIRECTORY_PATH}/${slug}`;
 }
 
-export function directoryUrl(params?: { q?: string; segmento?: BusinessVertical; tipo?: string; categoria?: string }): string {
+export function directoryUrl(params?: {
+  q?: string;
+  segmento?: BusinessVertical;
+  tipo?: string;
+  categoria?: string;
+  cidade?: string;
+}): string {
   const search = new URLSearchParams();
   if (params?.q) search.set("q", params.q);
   if (params?.segmento) search.set("segmento", params.segmento);
   if (params?.tipo) search.set("tipo", params.tipo);
   if (params?.categoria) search.set("categoria", params.categoria);
+  if (params?.cidade) search.set("cidade", params.cidade);
   const qs = search.toString();
   return qs ? `${DIRECTORY_PATH}?${qs}` : DIRECTORY_PATH;
 }

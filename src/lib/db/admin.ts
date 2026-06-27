@@ -1,5 +1,6 @@
 import { getVerticalConfig } from "@/lib/verticals/config";
 import { isValidArticleCategory } from "@/lib/article-categories";
+import { isPlatformCity } from "@/lib/cities";
 import type { Prisma, UserRole, WorkshopType } from "@prisma/client";
 import { hashPassword } from "@/lib/db/auth";
 import { prisma } from "@/lib/db/prisma";
@@ -17,6 +18,7 @@ export type AdminUserRow = {
   workshopId: string | null;
   workshopName: string | null;
   journalNiche: string | null;
+  journalCity: string | null;
   createdAt: string;
 };
 
@@ -53,6 +55,10 @@ export async function createWorkshop(input: {
 
   if (!name || !description || !address || !city || !state || !phone || !email) {
     return { ok: false, error: "Preencha todos os campos obrigatórios do negócio." };
+  }
+
+  if (!isPlatformCity(city)) {
+    return { ok: false, error: "Selecione uma cidade da lista." };
   }
 
   const vertical = input.vertical ?? "automotive";
@@ -179,6 +185,7 @@ function mapAdminUserRow(u: {
   role: UserRole;
   workshopId: string | null;
   journalNiche: string | null;
+  journalCity: string | null;
   createdAt: Date;
   workshop: { name: string } | null;
 }): AdminUserRow {
@@ -190,6 +197,7 @@ function mapAdminUserRow(u: {
     workshopId: u.workshopId,
     workshopName: u.workshop?.name ?? null,
     journalNiche: u.journalNiche,
+    journalCity: u.journalCity,
     createdAt: u.createdAt.toISOString(),
   };
 }
@@ -239,16 +247,21 @@ export async function createJournalist(input: {
   email: string;
   password: string;
   journalNiche: string;
+  journalCity: string;
 }): Promise<{ ok: true; user: JournalistRow } | { ok: false; error: string }> {
   const email = input.email.toLowerCase().trim();
   const name = input.name.trim();
   const journalNiche = input.journalNiche.trim();
+  const journalCity = input.journalCity.trim();
 
   if (!name || !email || input.password.length < 6) {
     return { ok: false, error: "Nome, e-mail válido e senha com no mínimo 6 caracteres." };
   }
   if (!isValidArticleCategory(journalNiche)) {
     return { ok: false, error: "Escolha uma editoria válida para o jornalista." };
+  }
+  if (!isPlatformCity(journalCity)) {
+    return { ok: false, error: "Selecione a cidade de atuação do jornalista." };
   }
 
   const existing = await prisma.user.findUnique({ where: { email } });
@@ -261,6 +274,7 @@ export async function createJournalist(input: {
       name,
       role: "jornalista",
       journalNiche,
+      journalCity,
       workshopId: null,
     },
     include: { workshop: { select: { name: true } } },
@@ -276,6 +290,7 @@ export async function updateJournalist(input: {
   id: string;
   name?: string;
   journalNiche?: string;
+  journalCity?: string;
   password?: string;
 }): Promise<{ ok: true; user: JournalistRow } | { ok: false; error: string }> {
   const user = await prisma.user.findUnique({ where: { id: input.id } });
@@ -283,7 +298,7 @@ export async function updateJournalist(input: {
     return { ok: false, error: "Jornalista não encontrado." };
   }
 
-  const data: { name?: string; journalNiche?: string; passwordHash?: string } = {};
+  const data: { name?: string; journalNiche?: string; journalCity?: string; passwordHash?: string } = {};
   if (input.name !== undefined) {
     const name = input.name.trim();
     if (!name) return { ok: false, error: "Nome é obrigatório." };
@@ -295,6 +310,13 @@ export async function updateJournalist(input: {
       return { ok: false, error: "Escolha uma editoria válida." };
     }
     data.journalNiche = journalNiche;
+  }
+  if (input.journalCity !== undefined) {
+    const journalCity = input.journalCity.trim();
+    if (!isPlatformCity(journalCity)) {
+      return { ok: false, error: "Selecione a cidade de atuação do jornalista." };
+    }
+    data.journalCity = journalCity;
   }
   if (input.password !== undefined) {
     if (input.password.length < 6) {

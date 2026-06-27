@@ -12,6 +12,8 @@ import {
 } from "@/lib/api/admin-client";
 import { businessProfilePath } from "@/lib/platform-routes";
 import { getVerticalConfig, VERTICAL_LIST } from "@/lib/verticals/config";
+import { CitySelectField } from "@/components/region/CitySelectField";
+import { PLATFORM_CITIES } from "@/lib/cities";
 import type { BusinessVertical } from "@/types/vertical";
 import type { Workshop, WorkshopType } from "@/types/workshop";
 
@@ -35,7 +37,7 @@ export default function AdminOficinasPage() {
     description: "",
     tagline: "",
     address: "",
-    city: "",
+    city: PLATFORM_CITIES[0] as string,
     state: "",
     phone: "",
     whatsapp: "",
@@ -105,7 +107,7 @@ export default function AdminOficinasPage() {
       description: "",
       tagline: "",
       address: "",
-      city: "",
+      city: PLATFORM_CITIES[0] as string,
       ownerName: "",
       ownerEmail: "",
       ownerPassword: "",
@@ -201,7 +203,12 @@ export default function AdminOficinasPage() {
             <input required className="input-field sm:col-span-2 lg:col-span-3" placeholder="Descrição *" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
             <input className="input-field sm:col-span-2" placeholder="Frase de destaque (opcional)" value={form.tagline} onChange={(e) => setForm({ ...form, tagline: e.target.value })} />
             <input required className="input-field sm:col-span-2" placeholder="Endereço *" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
-            <input required className="input-field" placeholder="Cidade *" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
+            <CitySelectField
+              required
+              value={form.city}
+              onChange={(city) => setForm({ ...form, city })}
+              placeholder="Cidade *"
+            />
             <input required className="input-field" placeholder="UF *" maxLength={2} value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value.toUpperCase() })} />
             <input required className="input-field" placeholder="Telefone *" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
             <input className="input-field" placeholder="WhatsApp (opcional)" value={form.whatsapp} onChange={(e) => setForm({ ...form, whatsapp: e.target.value })} />

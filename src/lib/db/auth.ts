@@ -22,6 +22,7 @@ export function toAuthUser(
     workshopSlug: workshop?.slug ?? null,
     workshopVertical: workshop?.vertical ?? null,
     journalNiche: user.journalNiche ?? null,
+    journalCity: user.journalCity ?? null,
   };
 }
 

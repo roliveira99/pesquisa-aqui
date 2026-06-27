@@ -97,6 +97,7 @@ export async function apiCreateJournalist(input: {
   email: string;
   password: string;
   journalNiche: string;
+  journalCity: string;
 }) {
   const res = await fetch("/api/admin/journalists", {
     ...fetchOpts,
@@ -116,6 +117,7 @@ export async function apiUpdateJournalist(input: {
   id: string;
   name?: string;
   journalNiche?: string;
+  journalCity?: string;
   password?: string;
 }) {
   const res = await fetch("/api/admin/journalists", {

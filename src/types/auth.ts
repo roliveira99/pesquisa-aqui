@@ -78,6 +78,7 @@ export interface AuthUser {
   workshopSlug?: string | null;
   workshopVertical?: import("@/types/vertical").BusinessVertical | null;
   journalNiche?: string | null;
+  journalCity?: string | null;
 }
 
 export interface NavItem {

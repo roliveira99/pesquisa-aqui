@@ -68,10 +68,13 @@ export function ClassifiedOffersSection({
 export function ClassifiedCategoryBar({
   active,
   counts,
+  cityFilter,
 }: {
   active?: string;
   counts: Record<string, number>;
+  cityFilter?: string;
 }) {
+  const cityQs = cityFilter ? `&cidade=${encodeURIComponent(cityFilter)}` : "";
   const categories = [
     { value: "all", label: "Todos" },
     { value: "vendas", label: "Vendas" },
@@ -89,7 +92,12 @@ export function ClassifiedCategoryBar({
           : counts[cat.value] ?? 0;
         if (cat.value !== "all" && count === 0) return null;
 
-        const href = cat.value === "all" ? "/classificados" : `/classificados?categoria=${cat.value}`;
+        const href =
+          cat.value === "all"
+            ? cityFilter
+              ? `/classificados?cidade=${encodeURIComponent(cityFilter)}`
+              : "/classificados"
+            : `/classificados?categoria=${cat.value}${cityQs}`;
         const isActive = (active ?? "all") === cat.value;
 
         return (

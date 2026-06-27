@@ -15,15 +15,20 @@ async function withPublicCatalog(workshop: Workshop): Promise<Workshop> {
 
 export async function listWorkshops(filter?: {
   vertical?: import("@/types/vertical").BusinessVertical;
+  city?: string;
 }): Promise<Workshop[]> {
   if (!(await isDatabaseReachable())) {
-    const list = staticWorkshops;
-    if (!filter?.vertical) return list;
-    return list.filter((w) => (w.vertical ?? "automotive") === filter.vertical);
+    let list = staticWorkshops;
+    if (filter?.vertical) list = list.filter((w) => (w.vertical ?? "automotive") === filter.vertical);
+    if (filter?.city) list = list.filter((w) => w.city === filter.city);
+    return list;
   }
 
   const rows = await prisma.workshop.findMany({
-    where: filter?.vertical ? { vertical: filter.vertical } : undefined,
+    where: {
+      ...(filter?.vertical ? { vertical: filter.vertical } : {}),
+      ...(filter?.city ? { city: filter.city } : {}),
+    },
     orderBy: { name: "asc" },
   });
   const workshops = rows.map(mapDbWorkshop);
